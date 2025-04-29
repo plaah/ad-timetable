@@ -1,2 +1,2 @@
 # UTM TimeTable
-# Starnge Group
+# Strange Group
