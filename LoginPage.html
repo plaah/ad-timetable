@@ -94,7 +94,7 @@
     <p style="margin-top: -10px;">Universiti Teknologi Malaysia</p>
     <div class="timely">TIMELY</div>
 
-    <input type="text" id="utmId" placeholder="UTM ID" />
+    <input type="text" id="utmId" placeholder="UTM ID" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()" />
     <input type="password" id="password" placeholder="PASSWORD" />
 
     <div class="forgot-password">
@@ -119,10 +119,8 @@
     }
 
     try {
-      // Ganti dengan URL API kampus UTM kamu
       const apiUrl = `http://utm.edu.my/web_man_webservice_json.cgi?entity=authentication&login=${utmId}&password=${password}`;
 
-      
       const response = await fetch(apiUrl);
       const data = await response.json();
 
@@ -131,14 +129,17 @@
         const fullName = data[0].full_name || "";
         const utmIdConfirmed = data[0].login || utmId;
 
-        // Simpan di sessionStorage
         sessionStorage.setItem('session_id', sessionId);
         sessionStorage.setItem('full_name', fullName);
         sessionStorage.setItem('utm_id', utmIdConfirmed);
 
-        // Logika sederhana deteksi peran (berdasarkan nama atau login)
+        alert("Login successful!\n\nName: " + fullName + "\nSession ID: " + sessionId);
+
+        // Simpan role sementara
         const roleGuess = fullName.toLowerCase().includes("lecturer") || fullName.toLowerCase().includes("pensyarah") ? "lecture" : "student";
 
+        // Redirect bisa diaktifkan nanti
+        /*
         if (roleGuess === "student") {
           window.location.href = 'dashboard-student.html';
         } else if (roleGuess === "lecture") {
@@ -146,6 +147,7 @@
         } else {
           errorMsg.textContent = "Unknown role. Access denied.";
         }
+        */
 
       } else {
         errorMsg.textContent = "Invalid UTM ID or Password.";
