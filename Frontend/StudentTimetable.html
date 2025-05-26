@@ -44,6 +44,51 @@
       border-bottom: 3px solid #7f1d1d;
       padding-bottom: 5px;
     }
+    .sidebar {
+      height: 100%;
+      width: 0;
+      position: fixed;
+      z-index: 1000;
+      top: 0;
+      right: 0;
+      background-color: #1e2a4a;
+      overflow-x: hidden;
+      transition: 0.3s;
+      padding-top: 60px;
+    }
+
+    .sidebar-profile {
+      text-align: center;
+      padding: 20px;
+      color: white;
+      border-bottom: 1px solid #2c3a5a;
+    }
+
+    .profile-pic {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 15px;
+      border: 3px solid #7f1d1d;
+    }
+
+    .sidebar-menu {
+      padding: 20px 0;
+    }
+
+    .sidebar-menu a {
+      padding: 12px 20px;
+      text-decoration: none;
+      font-size: 16px;
+      color: white;
+      display: block;
+      transition: 0.2s;
+    }
+
+    .sidebar-menu a:hover {
+      background-color: #2c3a5a;
+    }
 
     .timetable-container {
       margin: 20px;
@@ -117,13 +162,29 @@
 
 <header>
   <h1>Timetable</h1>
-  <div style="font-size: 24px;">☰</div>
+  <div id="menuToggle" style="font-size: 24px; cursor: pointer;">☰</div>
 </header>
 
 <nav class="nav-tabs">
-  <a href="StudentDashboard.html" class="nav-link">Dashboard</a>
+  <a href="DashboardStudent.html" class="nav-link">Dashboard</a>
   <a href="#" class="nav-link active">Timetable</a>
 </nav>
+
+<!-- Sidebar (right side) -->
+<div id="sidebar" class="sidebar">
+  <a href="javascript:void(0)" class="close-btn" id="closeSidebar">&times;</a>
+  <div class="sidebar-profile">
+    <img src="https://via.placeholder.com/150" alt="Profile" class="profile-pic" id="profileImage">
+    <h3 id="userName">Student Name</h3>
+    <p id="userMatric">Matric: A12345678</p>
+  </div>
+  <div class="sidebar-menu">
+    <a href="#"><i class="fas fa-user"></i> Profile</a>
+    <a href="StudentDashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+    <a href="#"><i class="fas fa-cog"></i> Settings</a>
+    <a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </div>
+</div>
 
 <div class="timetable-container">
   <h2>Weekly Schedule</h2>
@@ -275,17 +336,41 @@
 
 <script>
   // Script untuk navigasi dan session management
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener("DOMContentLoaded", () => {
     const sessionId = sessionStorage.getItem("utm_session_id");
-    
+    const fullName = sessionStorage.getItem("full_name") || "Student";
+
     if (!sessionId) {
       alert("You must log in first.");
       window.location.href = "loginPage.html";
       return;
     }
+
+       // Sidebar functionality (right side)
+    document.getElementById('menuToggle').addEventListener('click', function() {
+      document.getElementById('sidebar').style.width = '250px';
+    });
+
+    document.getElementById('closeSidebar').addEventListener('click', function() {
+      document.getElementById('sidebar').style.width = '0';
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', function(e) {
+      e.preventDefault();
+      sessionStorage.clear();
+      window.location.href = "loginPage.html";
+    });
+
+    // Close sidebar when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!document.getElementById('sidebar').contains(e.target) && 
+          e.target !== document.getElementById('menuToggle')) {
+        document.getElementById('sidebar').style.width = '0';
+      }
+    });
+  });
     
     // Anda bisa tambahkan logika lain jika diperlukan
-  });
 </script>
 
 </body>
