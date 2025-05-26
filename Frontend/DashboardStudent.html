@@ -47,6 +47,7 @@
 
     .search-bar {
       margin: 10px 20px;
+      max-width: 500px;
     }
 
     .search-bar input {
@@ -61,27 +62,31 @@
       font-weight: bold;
     }
 
-    .resources {
+    .timetable-cards {
       display: flex;
-      gap: 10px;
-      overflow-x: auto;
+      gap: 15px;
       padding: 0 20px;
+      flex-wrap: wrap;
     }
 
-    .resource-card {
-      min-width: 130px;
+    .timetable-card {
+      min-width: 150px;
       padding: 15px;
       border-radius: 12px;
       background-color: #eee;
       box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: transform 0.2s;
     }
 
-    .resource-card h4 {
-      margin: 0 0 5px;
+    .timetable-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 1px 3px 8px rgba(0,0,0,0.15);
     }
 
     .updates {
       margin: 20px;
+      max-width: 600px;
     }
 
     .update {
@@ -95,23 +100,24 @@
       margin-right: 5px;
     }
 
-    .home-button {
-      display: block;
-      margin: 30px auto;
-      width: 90%;
-      padding: 15px;
-      background-color: #7f1d1d;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      font-size: 16px;
-      font-weight: bold;
+    .dashboard-container {
+      display: flex;
+      flex-wrap: wrap;
     }
 
-    @media (min-width: 600px) {
-      .resources {
-        overflow-x: visible;
-        flex-wrap: wrap;
+    .left-section {
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .right-section {
+      flex: 1;
+      min-width: 300px;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-container {
+        flex-direction: column;
       }
     }
   </style>
@@ -125,28 +131,32 @@
 
 <nav class="nav-tabs">
   <a href="#" class="active">Home</a>
-  <a href="#">Resources</a>
+  <a href="#" id="timetable-link">Timetable</a>
 </nav>
 
 <div class="search-bar">
   <input type="text" placeholder="Search">
 </div>
 
-<div class="section-title">Timetable</div>
-<div class="resources" id="resources-container">
-  <!-- JS will populate here -->
-</div>
+<div class="dashboard-container">
+  <div class="left-section">
+    <div class="section-title">Timetable</div>
+    <div class="timetable-cards" id="timetable-container">
+      <!-- JS will populate here -->
+    </div>
+  </div>
 
-<div class="section-title">Notification</div>
-<div class="updates" id="updates-container">
-  <!-- JS will populate here -->
+  <div class="right-section">
+    <div class="section-title">Notification</div>
+    <div class="updates" id="updates-container">
+      <!-- JS will populate here -->
+    </div>
+  </div>
 </div>
-
-<button class="home-button">HOME</button>
 
 <script>
   window.addEventListener("DOMContentLoaded", () => {
-    const sessionId = sessionStorage.getItem("session_id");
+    const sessionId = sessionStorage.getItem("utm_session_id");
     const fullName = sessionStorage.getItem("full_name") || "Student";
 
     if (!sessionId) {
@@ -164,10 +174,9 @@
   });
 </script>
 
-
 <script>
   // Dummy data sementara
-  const resources = [
+  const timetable = [
     { title: 'ProdMNG 2021 EA', course: 'SMO 201 EA', lecturer: 'HONG Jisoo', bg: '#cce6f6' },
     { title: 'Spanish 2 OB', course: 'LNG 215 OD', lecturer: 'CHWE Vernon', bg: '#fff2c6' },
     { title: 'Japanese Pre-advanced', course: 'LNG 302 DC', lecturer: 'JEON Wonwoo', bg: '#fbd6dc' }
@@ -181,26 +190,34 @@
     { date: '07/05 (Mon)', label: '', text: 'Have you finished your MFA settings?' },
   ];
 
-  const resContainer = document.getElementById('resources-container');
-  resources.forEach(res => {
+  const timetableContainer = document.getElementById('timetable-container');
+  timetable.forEach(item => {
     const div = document.createElement('div');
-    div.className = 'resource-card';
-    div.style.backgroundColor = res.bg;
+    div.className = 'timetable-card';
+    div.style.backgroundColor = item.bg;
+    div.addEventListener('click', () => {
+      window.location.href = 'StudentTimetable.html';
+    });
+  
+  document.getElementById('timetable-link').addEventListener('click', function(e) {
+    e.preventDefault(); // Mencegah perilaku default link
+    window.location.href = 'StudentTimetable.html'; // Redirect ke halaman timetable
+  });
 
     // Menggunakan textContent untuk mencegah XSS
     const title = document.createElement('h4');
-    title.textContent = res.title;
+    title.textContent = item.title;
     const course = document.createElement('p');
-    course.textContent = res.course;
+    course.textContent = item.course;
     const lecturer = document.createElement('p');
     lecturer.style.fontSize = '12px';
-    lecturer.textContent = res.lecturer;
+    lecturer.textContent = item.lecturer;
 
     div.appendChild(title);
     div.appendChild(course);
     div.appendChild(lecturer);
 
-    resContainer.appendChild(div);
+    timetableContainer.appendChild(div);
   });
 
   const updContainer = document.getElementById('updates-container');
