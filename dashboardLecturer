@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lecturer Dashboard</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      height: 100vh;
+      background-color: #f4f4f4;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px;
+      background-color: #b22222; /* Changed from blue/purple to red */
+      color: white;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .nav-link:hover {
+      opacity: 0.8;
+    }
+
+    .nav-link span {
+      margin-left: 10px;
+    }
+
+    .signout {
+      margin-top: auto;
+      color: orange;
+      cursor: pointer;
+    }
+
+    /* Main Content */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      background-color: #2e2e38;
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .dashboard {
+      padding: 30px;
+      background-color: #ffffff;
+      border-radius: 20px;
+      margin: 30px;
+      flex: 1;
+    }
+
+    .dashboard h1 {
+      color: #b22222; /* match red theme */
+      margin-bottom: 20px;
+    }
+
+    .resources {
+      margin-bottom: 30px;
+    }
+
+    .resources h3,
+    .subjects h3 {
+      margin-bottom: 15px;
+      color: #000;
+    }
+
+    .resource-list {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+    }
+
+    .resource-card {
+      background-color: #f2f2f2;
+      padding: 15px;
+      border-radius: 10px;
+      min-width: 150px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .subjects .subject-item {
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .subject-code {
+      background-color: #ffd5d5;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+
+    .schedule-btn {
+      background-color: #8B3A3A;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .profile-img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: gray;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="nav-link"><span>🏠</span> <span>Home</span></div>
+    <div class="nav-link"><span>🎓</span> <span>Students</span></div>
+    <div class="nav-link"><span>📚</span> <span>Classes</span></div>
+    <div class="nav-link"><span>📄</span> <span>Records</span></div>
+    <div class="nav-link"><span>📁</span> <span>Resources</span></div>
+    <div class="nav-link"><span>⚙️</span> <span>Settings</span></div>
+    <div class="nav-link"><span>🔴</span> <span>Staff Room</span></div>
+    <div class="signout nav-link"><span>🚪</span> <span>Sign Out</span></div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+    <div class="topbar">
+      <div>Dashboard</div>
+      <div class="profile">
+        <div>🔔</div>
+        <div class="profile-img"></div>
+      </div>
+    </div>
+
+    <div class="dashboard">
+      <h1>Welcome, Lecturer</h1>
+
+      <div class="resources">
+        <h3>Recently shared resources</h3>
+        <div class="resource-list">
+          <div class="resource-card">ProdMNG 2021 EA<br><small>SMO 201 EA</small></div>
+          <div class="resource-card">Spanish 2 OB<br><small>LNG 215 0D</small></div>
+          <div class="resource-card">Japanese Pre-DC<br><small>LNG 302 DC</small></div>
+          <div class="resource-card">Global Mgmt<br><small>APM 401 EC</small></div>
+          <div class="resource-card">SP21 SSAW (EA)<br><small>LBA 101 EA</small></div>
+        </div>
+      </div>
+
+      <div class="subjects">
+        <h3>Subject list</h3>
+
+        <div class="subject-item">
+          <div>
+            <div class="subject-code">AD</div>
+            <div>SECJ1022 section:01<br>MON 9:00AM</div>
+          </div>
+          <button class="schedule-btn">Schedule</button>
+        </div>
+
+        <div class="subject-item">
+          <div>
+            <div class="subject-code">SQA</div>
+            <div>SECJ1042 section:02<br>WED 9:00AM</div>
+          </div>
+          <button class="schedule-btn">Schedule</button>
+        </div>
+
+        <div class="subject-item">
+          <div>
+            <div class="subject-code">CI</div>
+            <div>SECJ1033 section:02<br>FRI 9:00AM</div>
+          </div>
+          <button class="schedule-btn">Schedule</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
