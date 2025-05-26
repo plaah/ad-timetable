@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>UTM Timely Login</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      margin-top: 60px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .utm-logo {
+      width: 90px;
+      height: auto;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      margin: 5px 0;
+      color: #7f1d1d;
+    }
+
+    .timely {
+      font-size: 48px;
+      font-weight: bold;
+      color: #7f1d1d;
+      text-shadow: 2px 2px 0 #000000;
+      margin: 10px 0 30px;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      background-color: #f5f5f9;
+      font-weight: bold;
+    }
+
+    .forgot-password {
+      text-align: right;
+      margin-bottom: 25px;
+      font-size: 12px;
+    }
+
+    .forgot-password a {
+      color: navy;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .login-btn {
+      background-color: #933b3b;
+      color: white;
+      padding: 14px;
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .login-btn:hover {
+      background-color: #7f2f2f;
+    }
+
+    .success-popup {
+      display: none;
+      position: fixed;
+      top: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #d1fae5;
+      color: #065f46;
+      padding: 20px;
+      border: 1px solid #10b981;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      font-weight: bold;
+      z-index: 1000;
+    }
+
+    .error {
+      color: red;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    #loading {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="https://upload.wikimedia.org/wikipedia/en/1/1f/UTM-LOGO.png" alt="UTM Logo" class="utm-logo" />
+    <h1>UTM</h1>
+    <p style="margin-top: -10px;">Universiti Teknologi Malaysia</p>
+    <div class="timely">TIMELY</div>
+
+    <input type="text" id="utmId" placeholder="UTM ID" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()" />
+    <input type="password" id="password" placeholder="PASSWORD" />
+
+    <div class="forgot-password">
+      <a href="#">forget your password?</a>
+    </div>
+
+    <button class="login-btn" onclick="login()">LOG IN</button>
+
+    <div class="error" id="error-msg"></div>
+    <div id="loading" style="display:none;">Authenticating...</div>
+    <div class="success-popup" id="success-popup">Login successful! Redirecting...</div>
+  </div>
+
+  <script>
+    async function login() {
+      const utmId = document.getElementById("utmId").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const errorMsg = document.getElementById("error-msg");
+      const successPopup = document.getElementById("success-popup");
+      const loadingMsg = document.getElementById("loading");
+
+      errorMsg.textContent = "";
+      loadingMsg.style.display = "block";
+
+      if (!utmId || !password) {
+        errorMsg.textContent = "Please enter both UTM ID and Password.";
+        loadingMsg.style.display = "none";
+        return;
+      }
+
+      try {
+        const apiUrl = `https://utmfic.utm.my/web_man_webservice_json.cgi?entity=authentication&login=${encodeURIComponent(utmId)}&password=${encodeURIComponent(password)}`;
+        const response = await fetch(apiUrl);
+
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+
+        if (data && data.length > 0 && data[0].session_id) {
+          const sessionId = data[0].session_id;
+          const fullName = data[0].full_name || "";
+          const loginName = data[0].login_name || utmId;
+
+          sessionStorage.setItem('utm_session_id', sessionId);
+          sessionStorage.setItem('utm_full_name', fullName);
+          sessionStorage.setItem('utm_login_name', loginName);
+
+          // Cek apakah lecturer
+          const pensyarahRes = await fetch(`https://utmfic.utm.my/web_man_webservice_json.cgi?entity=pensyarah&session_id=${sessionId}`);
+          const pensyarahData = await pensyarahRes.json();
+
+          let roleGuess = "student"; // default
+          if (pensyarahData && pensyarahData.length > 0) {
+            roleGuess = "lecturer";
+          }
+
+          // Tampilkan popup sukses
+          loadingMsg.style.display = "none";
+          successPopup.style.display = "block";
+
+          // Redirect
+          setTimeout(() => {
+            window.location.href = roleGuess === "student"
+              ? 'dashboard-student.html'
+              : 'dashboard-lecture.html';
+          }, 1500);
+        } else {
+          loadingMsg.style.display = "none";
+          errorMsg.textContent = "Invalid UTM ID or Password.";
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        loadingMsg.style.display = "none";
+        errorMsg.textContent = "Login failed. Please check your credentials and try again.";
+      }
+    }
+  </script>
+</body>
+</html>
