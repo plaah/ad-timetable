@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UTM Timetable</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f9f9f9;
+    }
+
+    header {
+      background-color: #1e2a4a;
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      font-size: 20px;
+      margin: 0;
+    }
+
+    .nav-tabs {
+      display: flex;
+      background: #fff;
+      padding: 10px 20px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .nav-tabs a {
+      margin-right: 20px;
+      text-decoration: none;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .nav-tabs a.active {
+      color: #7f1d1d;
+      border-bottom: 3px solid #7f1d1d;
+      padding-bottom: 5px;
+    }
+
+    .timetable-container {
+      margin: 20px;
+      overflow-x: auto;
+    }
+
+    .timetable {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    .timetable th, .timetable td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+
+    .timetable th {
+      background-color: #1e2a4a;
+      color: white;
+      font-weight: normal;
+    }
+
+    .time-column {
+      background-color: #f2f2f2;
+      font-weight: bold;
+      width: 60px;
+    }
+
+    .day-column {
+      min-width: 120px;
+    }
+
+    .course-slot {
+      background-color: #cce6f6;
+      border-radius: 4px;
+      padding: 5px;
+      margin: 2px 0;
+      font-size: 14px;
+    }
+
+    .course-slot.span-2 { height: calc(2em + 20px); }
+    .course-slot.span-3 { height: calc(3em + 30px); }
+
+    .course-title {
+      font-weight: bold;
+      color: #1e2a4a;
+    }
+
+    .course-info {
+      font-size: 12px;
+      color: #555;
+    }
+
+    .empty-slot {
+      height: 40px;
+    }
+
+    @media (max-width: 768px) {
+      .timetable {
+        font-size: 14px;
+      }
+      .course-slot {
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Timetable</h1>
+  <div style="font-size: 24px;">☰</div>
+</header>
+
+<nav class="nav-tabs">
+  <a href="StudentDashboard.html" class="nav-link">Dashboard</a>
+  <a href="#" class="nav-link active">Timetable</a>
+</nav>
+
+<div class="timetable-container">
+  <h2>Weekly Schedule</h2>
+  <table class="timetable">
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Monday</th>
+        <th>Tuesday</th>
+        <th>Wednesday</th>
+        <th>Thursday</th>
+        <th>Friday</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Jam 8-9 -->
+      <tr>
+        <td class="time-column">08:00-09:00</td>
+        <td class="day-column">
+          <div class="course-slot span-2">
+            <div class="course-title">ProdMNG 2021 EA</div>
+            <div class="course-info">SMO 201 EA</div>
+            <div class="course-info">HONG Jisoo</div>
+            <div class="course-info">Room: A201</div>
+          </div>
+        </td>
+        <td class="day-column"></td>
+        <td class="day-column">
+          <div class="course-slot">
+            <div class="course-title">Japanese</div>
+            <div class="course-info">LNG 302 DC</div>
+            <div class="course-info">JEON Wonwoo</div>
+          </div>
+        </td>
+        <td class="day-column"></td>
+        <td class="day-column"></td>
+      </tr>
+      
+      <!-- Jam 9-10 -->
+      <tr>
+        <td class="time-column">09:00-10:00</td>
+        <td class="day-column">
+          <!-- Lanjutan kelas dari jam 8-10 (span 2 slot) -->
+        </td>
+        <td class="day-column"></td>
+        <td class="day-column"></td>
+        <td class="day-column">
+          <div class="course-slot">
+            <div class="course-title">Spanish 2 OB</div>
+            <div class="course-info">LNG 215 OD</div>
+            <div class="course-info">CHWE Vernon</div>
+          </div>
+        </td>
+        <td class="day-column"></td>
+      </tr>
+      
+      <!-- Jam 10-11 -->
+      <tr>
+        <td class="time-column">10:00-11:00</td>
+        <td class="day-column"></td>
+        <td class="day-column">
+          <div class="course-slot span-2">
+            <div class="course-title">Data Science</div>
+            <div class="course-info">CS 301 EA</div>
+            <div class="course-info">KIM Mingyu</div>
+            <div class="course-info">Room: B305</div>
+          </div>
+        </td>
+        <td class="day-column"></td>
+        <td class="day-column"></td>
+        <td class="day-column"></td>
+      </tr>
+      
+      <!-- Jam 11-12 -->
+      <tr>
+        <td class="time-column">11:00-12:00</td>
+        <td class="day-column"></td>
+        <td class="day-column">
+          <!-- Lanjutan kelas dari jam 10-12 (span 2 slot) -->
+        </td>
+        <td class="day-column"></td>
+        <td class="day-column"></td>
+        <td class="day-column">
+          <div class="course-slot">
+            <div class="course-title">Web Development</div>
+            <div class="course-info">CS 210 OB</div>
+            <div class="course-info">LEE Seokmin</div>
+          </div>
+        </td>
+      </tr>
+      
+      <!-- Jam 12-13 (Istirahat) -->
+      <tr>
+        <td class="time-column">12:00-13:00</td>
+        <td colspan="5" style="background-color: #ffe6e6; text-align: center;">
+          Lunch Break
+        </td>
+      </tr>
+      
+      <!-- Jam 13-14 -->
+      <tr>
+        <td class="time-column">13:00-14:00</td>
+        <td class="day-column"></td>
+        <td class="day-column"></td>
+        <td class="day-column">
+          <div class="course-slot span-3">
+            <div class="course-title">Project Lab</div>
+            <div class="course-info">PRJ 401 DC</div>
+            <div class="course-info">KWON Soonyoung</div>
+            <div class="course-info">Room: Lab 3</div>
+          </div>
+        </td>
+        <td class="day-column"></td>
+        <td class="day-column"></td>
+      </tr>
+      
+      <!-- Jam 14-15 -->
+      <tr>
+        <td class="time-column">14:00-15:00</td>
+        <td class="day-column"></td>
+        <td class="day-column"></td>
+        <td class="day-column">
+          <!-- Lanjutan kelas dari jam 13-16 (span 3 slot) -->
+        </td>
+        <td class="day-column"></td>
+        <td class="day-column"></td>
+      </tr>
+      
+      <!-- Jam 15-16 -->
+      <tr>
+        <td class="time-column">15:00-16:00</td>
+        <td class="day-column"></td>
+        <td class="day-column"></td>
+        <td class="day-column">
+          <!-- Lanjutan kelas dari jam 13-16 (span 3 slot) -->
+        </td>
+        <td class="day-column"></td>
+        <td class="day-column">
+          <div class="course-slot">
+            <div class="course-title">AI Basics</div>
+            <div class="course-info">CS 310 EA</div>
+            <div class="course-info">XU Minghao</div>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+  // Script untuk navigasi dan session management
+  document.addEventListener('DOMContentLoaded', function() {
+    const sessionId = sessionStorage.getItem("utm_session_id");
+    
+    if (!sessionId) {
+      alert("You must log in first.");
+      window.location.href = "loginPage.html";
+      return;
+    }
+    
+    // Anda bisa tambahkan logika lain jika diperlukan
+  });
+</script>
+
+</body>
+</html>
