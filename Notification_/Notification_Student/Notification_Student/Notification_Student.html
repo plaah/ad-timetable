@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notifications</title>
+  <link rel="stylesheet" href="notificationS.css" />
+</head>
+<body>
+  <!-- Sidebar Toggle and Sidebar -->
+  <div id="sidebar" class="sidebar">
+    <button id="closeSidebar" class="close-sidebar">&times;</button>
+    <nav class="sidebar-nav">
+      <a href="/HomeworkStudent/HomeworkStudent.html">Home</a>
+      <a href="/DashboardSubject/DashboardSubject.html">Dashboard</a>
+      <a href="Notification_Student.html" class="active">Notification</a>
+      <a href="#">Settings</a>
+      <a href="#">Resources</a>
+      <a href="#">Profile</a>
+    </nav>
+  </div>
+  <div id="sidebarOverlay" class="sidebar-overlay"></div>
+  <header class="main-navbar">
+    <nav class="nav-menu">
+      <div class="nav-left">
+        <button id="openSidebar" class="menu-toggle">
+          <img src="/Gambar/list-left.png" alt="Menu" />
+        </button>
+        <span class="nav-title">Notifications</span>
+      </div>
+      <div class="nav-right">
+        <div class="nav-links">
+          <a href="/HomeworkStudent/HomeworkStudent.html">Home</a>
+          <a href="/DashboardSubject/DashboardSubject.html">Dashboard</a>
+          <a href="Notification_Student.html" class="active">Notification</a>
+        </div>
+        <div class="nav-profile">
+          <a href="#" class="profile-icon"></a>
+        </div>
+      </div>
+    </nav>
+  </header>
+  <div class="container">
+    <h2>Notifications</h2>
+    <ul class="notification-list">
+      <li>Someone Message you <span>11:50</span><button class="delete">🗑</button></li>
+      <li>Due date - SECV2322 Artificial Intelligence <span>11:40</span><button class="delete">🗑</button></li>
+      <li>Due date - SECV2332 Artificial Intelligence <span>11:30</span><button class="delete">🗑</button></li>
+      <li>Due date - SEC.2033 Blockchain Development <span>10:30</span><button class="delete">🗑</button></li>
+      <li>Someone Message you <span>10:40</span><button class="delete">🗑</button></li>
+      <li>Due date - SEC.1223 Web 3 Development <span>10:00</span><button class="delete">🗑</button></li>
+    </ul>
+    <button class="delete-all">Delete All</button>
+  </div>
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    document.getElementById('openSidebar').addEventListener('click', () => {
+      sidebar.classList.add('show');
+      overlay.classList.add('show');
+    });
+    document.getElementById('closeSidebar').addEventListener('click', () => {
+      sidebar.classList.remove('show');
+      overlay.classList.remove('show');
+    });
+    overlay.addEventListener('click', () => {
+      sidebar.classList.remove('show');
+      overlay.classList.remove('show');
+    });
+  </script>
+</body>
+</html>

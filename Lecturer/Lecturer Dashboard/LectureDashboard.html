@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecturer Dashboard</title>
+  <link rel="stylesheet" href="LecturerDashboard.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <ul class="sidebar-menu">
+      <li class="sidebar-item active"><i class="fas fa-home"></i><span>Home</span></li>
+      <li class="sidebar-item"><i class="fas fa-user-graduate"></i><span>Students</span></li>
+      <li class="sidebar-item"><i class="fas fa-chalkboard-teacher"></i><span>Classes</span></li>
+      <li class="sidebar-item"><i class="fas fa-book"></i><span>Records</span></li>
+      <li class="sidebar-item"><i class="fas fa-folder-open"></i><span>Resources</span></li>
+      <li class="sidebar-item"><i class="fas fa-cog"></i><span>Settings</span></li>
+      <li class="sidebar-item"><i class="fas fa-users"></i><span>Staff Room</span></li>
+      <li class="sidebar-item sign-out"><i class="fas fa-sign-out-alt"></i><span>Sign Out</span></li>
+    </ul>
+  </aside>
+  <div class="main">
+    <nav class="navbar">
+      <div class="nav-left">
+        <button class="menu-btn">
+          <i class="fas fa-bars"></i>
+        </button>
+        <h2 class="page-title">Dashboard</h2>
+      </div>
+      <ul class="nav-links">
+        <li><a href="/Lecturer/Lecturer Timetable/LecturerTimetable.html">Home</a></li>
+        <li><a href="/Lecturer/Lecturer Dashboard/LectureDashboard.html" class="active">Dashboard</a></li>
+        <li><a href="/Lecturer/Notification_Lecturer/Notification_Lecturer.html">Notification</a></li>
+      </ul>
+      <div class="nav-right">
+        <div class="profile-pic"></div>
+      </div>
+    </nav>
+    <div class="dashboard-container">
+      <header class="dashboard-header">
+        <h1>Welcome, Lecturer</h1>
+      </header>
+
+      <section class="subject-list-section">
+        <div class="section-header">
+          <h2>Subject list</h2>
+          <button class="schedule-btn">
+            <span class="calendar-icon">📅</span>
+            Schedule
+          </button>
+        </div>
+
+        <div class="subject-list">
+          <div class="subject-card">
+            <div class="subject-icon">
+              <div class="abbrev">AD</div>
+              <div class="code">A1</div>
+            </div>
+            <div class="subject-info">
+              <div class="subject-title">SEC1-1022 section01</div>
+              <div class="subject-time">Mon</div>
+            </div>
+          </div>
+
+          <div class="subject-card">
+            <div class="subject-icon">
+              <div class="abbrev">SQA</div>
+              <div class="code">8.02</div>
+            </div>
+            <div class="subject-info">
+              <div class="subject-title">SEC1-1022 section02</div>
+              <div class="subject-time">Wed 9:00 AM</div>
+            </div>
+          </div>
+
+          <div class="subject-card">
+            <div class="subject-icon">
+              <div class="abbrev">LAB</div>
+              <div class="code">L01</div>
+            </div>
+            <div class="subject-info">
+              <div class="subject-title">SEC2-2021 section03</div>
+              <div class="subject-time">Fri 2:00 PM</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+  <script>
+    const sidebar = document.querySelector('.sidebar');
+    const menuBtn = document.querySelector('.menu-btn');
+    const menuIcon = menuBtn.querySelector('i');
+    menuBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+      menuIcon.classList.toggle('fa-bars');
+      menuIcon.classList.toggle('fa-times');
+    });
+  </script>
+</body>
+</html>

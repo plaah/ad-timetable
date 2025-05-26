@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Homework Student</title>
+  <link rel="stylesheet" href="homework_student.css" />
+</head>
+<body>
+  <!-- Sidebar Toggle and Sidebar -->
+  <div id="sidebar" class="sidebar">
+    <button id="closeSidebar" class="close-sidebar">&times;</button>
+    <nav class="sidebar-nav">
+      <a href="HomeworkStudent.html">Home</a>
+      <a href="/DashboardSubject/DashboardSubject.html">Dashboard</a>
+      <a href="/Notification_/Notification_Student/Notification_Student/Notification_Student.html">Notification</a>
+      <a href="#">Settings</a>
+      <a href="#">Resources</a>
+      <a href="#">Profile</a>
+    </nav>
+  </div>
+  <div id="sidebarOverlay" class="sidebar-overlay"></div>
+  <header class="main-navbar">
+    <nav class="nav-menu">
+      <div class="nav-left">
+        <button id="openSidebar" class="menu-toggle">
+          <img src="/Gambar/list-left.png" alt="Menu" />
+        </button>
+        <span class="nav-title">Home</span>
+      </div>
+      <div class="nav-right">
+        <div class="nav-links">
+          <a href="HomeworkStudent.html" class="active">Home</a>
+          <a href="/DashboardSubject/DashboardSubject.html">Dashboard</a>
+          <a href="/Notification_/Notification_Student/Notification_Student/Notification_Student.html">Notification</a>
+        </div>
+        <div class="nav-profile">
+          <a href="#" class="profile-icon"></a>
+        </div>
+      </div>
+    </nav>
+  </header>
+  <div class="container">
+    <h2>Welcome, Student</h2>
+    <div class="dashboard">
+      <div class="search-bar"></div>
+      <div class="menu-options">
+        <button class="filter-btn" onclick="toggleFilterPopup()">Filter</button>
+      </div>
+    </div>
+    <div id="filter-popup" class="filter-popup">
+      <div class="filter-popup-content">
+        <button class="close-popup" onclick="toggleFilterPopup()">&times;</button>
+        <div class="filter-row">
+          <span class="filter-label"><img src="../Gambar/icons8-checkmark-50.png" class="checkmark-icon"> Submitted</span>
+          <span class="filter-label"><img src="../Gambar/icons8-checkmark-50.png" class="checkmark-icon"> Graded</span>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label"><img src="../Gambar/icons8-checkmark-50.png" class="checkmark-icon"> Previous 7 Days</span>
+          <span class="filter-label"><img src="../Gambar/icons8-checkmark-50.png" class="checkmark-icon"> UnGraded</span>
+        </div>
+      </div>
+    </div>
+    <div class="overlay" id="popup-overlay" onclick="toggleFilterPopup()"></div>
+
+    <h3>Today's Homework</h3>
+    <div class="homework-section">
+    <div class="homework-list">
+      <div class="homework-card red">
+        <p>Statistic</p>
+        <h4>Homework 1</h4>
+      </div>
+      <div class="homework-card green">
+        <p>Mathematics</p>
+        <h4>Homework 2</h4>
+      </div>
+      <div class="homework-card blue">
+        <p>Biology</p>
+        <h4>Homework 3</h4>
+      </div>
+      <div class="homework-card sky">
+        <p>Vocabulary</p>
+        <h4>Homework 4</h4>
+      </div>
+    </div>
+    <div class="calendar-container">
+      <div class="calendar-header">
+        <button id="prev-month">&lt;</button>
+        <span id="month-year"></span>
+        <button id="next-month">&gt;</button>
+      </div>
+      <div class="calendar-grid">
+        <div class="day-name">Sun</div>
+        <div class="day-name">Mon</div>
+        <div class="day-name">Tue</div>
+        <div class="day-name">Wed</div>
+        <div class="day-name">Thu</div>
+        <div class="day-name">Fri</div>
+        <div class="day-name">Sat</div>
+      </div>
+    </div>
+    </div>
+  </div>
+  <script>
+  function toggleFilterPopup() {
+    const popup = document.getElementById('filter-popup');
+    const overlay = document.getElementById('popup-overlay');
+    popup.classList.toggle('show');
+    overlay.classList.toggle('show');
+  }
+  </script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const monthYearElem = document.getElementById('month-year');
+    const prevBtn = document.getElementById('prev-month');
+    const nextBtn = document.getElementById('next-month');
+    const calendarGrid = document.querySelector('.calendar-grid');
+    let currentDate = new Date();
+
+    function renderCalendar() {
+      calendarGrid.innerHTML = '';
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      monthYearElem.textContent = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+      for (let x = firstDay; x > 0; x--) {
+        const cell = document.createElement('div');
+        cell.classList.add('day-cell', 'other-month');
+        cell.textContent = daysInPrevMonth - x + 1;
+        calendarGrid.appendChild(cell);
+      }
+      for (let day = 1; day <= daysInMonth; day++) {
+        const cell = document.createElement('div');
+        cell.classList.add('day-cell');
+        cell.textContent = day;
+        const today = new Date();
+        if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+          cell.classList.add('today');
+        }
+        calendarGrid.appendChild(cell);
+      }
+
+      const totalCells = firstDay + daysInMonth;
+      const nextDays = (7 - (totalCells % 7)) % 7;
+      for (let i = 1; i <= nextDays; i++) {
+        const cell = document.createElement('div');
+        cell.classList.add('day-cell', 'other-month');
+        cell.textContent = i;
+        calendarGrid.appendChild(cell);
+      }
+    }
+
+    prevBtn.addEventListener('click', () => {
+      currentDate.setMonth(currentDate.getMonth() - 1);
+      renderCalendar();
+    });
+    nextBtn.addEventListener('click', () => {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      renderCalendar();
+    });
+
+    renderCalendar();
+  });
+  </script>
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    document.getElementById('openSidebar').addEventListener('click', () => {
+      sidebar.classList.add('show');
+      overlay.classList.add('show');
+    });
+    document.getElementById('closeSidebar').addEventListener('click', () => {
+      sidebar.classList.remove('show');
+      overlay.classList.remove('show');
+    });
+    overlay.addEventListener('click', () => {
+      sidebar.classList.remove('show');
+      overlay.classList.remove('show');
+    });
+  </script>
+</body>
+</html>

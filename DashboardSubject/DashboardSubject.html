@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Subject</title>
+  <link rel="stylesheet" href="dashboard_subject.css" />
+</head>
+<body>
+  <!-- Sidebar Toggle dan Sidebar -->
+  <div id="sidebar" class="sidebar">
+    <button id="closeSidebar" class="close-sidebar">&times;</button>
+    <nav class="sidebar-nav">
+      <a href="#">Home</a>
+      <a href="#">Students</a>
+      <a href="#">Classes</a>
+      <a href="#">Records</a>
+      <a href="#">Resources</a>
+      <a href="#">Settings</a>
+      <a href="#">Staff Room</a>
+      <a href="#">Sign Out</a>
+    </nav>
+  </div>
+  <div id="sidebarOverlay" class="sidebar-overlay"></div>
+
+  <header class="main-navbar">
+    <nav class="nav-menu">
+      <div class="nav-left">
+        <button id="openSidebar" class="menu-toggle">
+          <img src="/Gambar/list-left.png" alt="Menu" />
+        </button>
+        <span class="nav-title">Dashboard</span>
+      </div>
+      <div class="nav-right">
+        <div class="nav-links">
+          <a href="/HomeworkStudent/HomeworkStudent.html">Home</a>
+          <a href="DashboardSubject.html" class="active">Dashboard</a>
+          <a href="/Notification_/Notification_Student/Notification_Student/Notification_Student.html">Notification</a>
+        </div>
+        <div class="nav-profile">
+          <a href="#" class="profile-icon"></a>
+        </div>
+      </div>
+    </nav>
+  </header>
+  <div class="container">
+    <h2>Welcome, Student</h2>
+    <div class="subject-header">
+      <div class="search-bar"></div>
+      <div class="filter-options">
+        <button class="status">In Progress</button>
+        <button class="status">Card</button>
+      </div>
+    </div>
+
+    <div class="subjects">
+      <div class="subject-card">
+        <h3 class="subject-title subject-1">STCL2023 - Software Design and Architecture</h3>
+      </div>
+      <div class="subject-card">
+        <h3 class="subject-title subject-2">SEC2023 - Blockchain Development</h3>
+      </div>
+      <div class="subject-card">
+        <h3 class="subject-title subject-3">UII2023 - Microservices</h3>
+      </div>
+      <div class="subject-card">
+        <h3 class="subject-title subject-4">SEC1234 - Artificial Intelligence</h3>
+      </div>
+      <div class="subject-card">
+        <h3 class="subject-title subject-5">SEC1223 - Web 3 Development</h3>
+      </div>
+      <div class="subject-card">
+        <h3 class="subject-title subject-6">SEC1220 - DSA Programming</h3>
+      </div>
+    </div>
+  </div>
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    document.getElementById('openSidebar').addEventListener('click', () => {
+      sidebar.classList.add('show');
+      overlay.classList.add('show');
+    });
+    document.getElementById('closeSidebar').addEventListener('click', () => {
+      sidebar.classList.remove('show');
+      overlay.classList.remove('show');
+    });
+    overlay.addEventListener('click', () => {
+      sidebar.classList.remove('show');
+      overlay.classList.remove('show');
+    });
+  </script>
+</body>
+</html>
