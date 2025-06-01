@@ -31,12 +31,14 @@
 console.log("Login Loaded . . . ");
 import { ref } from "vue";
 import AuthApi from "@/api/AuthenticationApi";
+import { useRouter } from "vue-router";
 
 const utmId = ref("");
 const password = ref("");
 const sessionId = ref("");
 const isLoading = ref(false);
 const error = ref("");
+const router = useRouter();
 
 const authApi = new AuthApi();
 
@@ -57,7 +59,16 @@ const handleLogin = async () => {
         JSON.stringify(data[0])
       );
       sessionId.value = data[0].session_id;
-      window.location.replace("/main");
+
+      // 🔥 Tambahin redirect berdasarkan role
+      const role = data[0]?.role?.toLowerCase();
+      if (role === "student") {
+        router.push("/dashboard-student");
+      } else if (role === "lecture") {
+        router.push("/dashboard-lecture");
+      } else {
+        router.push("/"); // fallback kalau role nggak ada
+      }
     } else {
       error.value = "Invalid login response!";
       console.warn("Unexpected response format:", data);
@@ -70,6 +81,8 @@ const handleLogin = async () => {
   }
 };
 </script>
+
+
 
 <style scoped>
 body {
