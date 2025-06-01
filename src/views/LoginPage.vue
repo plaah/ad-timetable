@@ -1,69 +1,73 @@
 <template>
   <div class="container">
-    <img src="https://upload.wikimedia.org/wikipedia/en/1/1f/UTM-LOGO.png" alt="UTM Logo" class="utm-logo" />
+    <img src="/UTM-LOGO.png" alt="UTM Logo" class="utm-logo" />
     <h1>UTM</h1>
     <p style="margin-top: -10px;">Universiti Teknologi Malaysia</p>
     <div class="timely">TIMELY</div>
 
-    <input type="text" v-model="utmId" placeholder="UTM ID" style="text-transform: uppercase;" @input="utmId = utmId.toUpperCase()" />
+    <input
+      type="text"
+      v-model="utmId"
+      placeholder="UTM ID"
+      style="text-transform: uppercase"
+      @input="utmId = utmId.toUpperCase()"
+    />
     <input type="password" v-model="password" placeholder="PASSWORD" />
 
     <div class="forgot-password">
       <a href="#">forget your password?</a>
     </div>
 
-    <button class="login-btn" @click="login">LOG IN</button>
+    <button class="login-btn" @click="handleLogin">Login</button>
 
     <div class="error" v-if="error">{{ error }}</div>
-    <div v-if="loading" style="margin-top:10px; font-size:14px; color:#555;">Authenticating...</div>
+    <div v-if="isLoading" style="margin-top:10px; font-size:14px; color:#555;">
+      Authenticating...
+    </div>
   </div>
 </template>
 
-<script>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { userName, userMatric } from '../constants/ApiConstants';
-import AuthApi from '../api/AuthenticationApi';
+<script setup>
+console.log("Login Loaded . . . ");
+import { ref } from "vue";
+import AuthApi from "@/api/AuthenticationApi";
 
-export default {
-  setup() {
-    const utmId = ref('');
-    const password = ref('');
-    const error = ref('');
-    const loading = ref(false);
-    const router = useRouter();
-    const authApi = new AuthApi();
+const utmId = ref("");
+const password = ref("");
+const sessionId = ref("");
+const isLoading = ref(false);
+const error = ref("");
 
-    const login = async () => {
-      error.value = '';
-      loading.value = true;
+const authApi = new AuthApi();
 
-      if (!utmId.value || !password.value) {
-        error.value = 'Please enter both UTM ID and Password.';
-        loading.value = false;
-        return;
-      }
+const handleLogin = async () => {
+  error.value = "";
+  try {
+    isLoading.value = true;
 
-      try {
-        const response = await authApi.login(utmId.value, password.value);
+    console.log("Sending login:", utmId.value, password.value);
+    const data = await authApi.login(utmId.value, password.value);
 
-        if (response.success) {
-          userName.value = response.fullName;
-          userMatric.value = utmId.value;
-          localStorage.setItem('utm_session_id', response.sessionId);
-          router.push(response.role === 'student' ? '/dashboard-student' : '/dashboard-lecture');
-        } else {
-          error.value = 'Invalid UTM ID or Password.';
-        }
-      } catch (error) {
-        error.value = 'Invalid UTM ID or Password.';
-      }
+    console.log("Received:", data);
 
-      loading.value = false;
-    };
-
-    return { utmId, password, error, loading, login };
-  },
+    if (Array.isArray(data) && data[0]?.session_id) {
+      alert("Login successful!");
+      localStorage.setItem(
+        "web.fc.utm.my_usersession",
+        JSON.stringify(data[0])
+      );
+      sessionId.value = data[0].session_id;
+      window.location.replace("/main");
+    } else {
+      error.value = "Invalid login response!";
+      console.warn("Unexpected response format:", data);
+    }
+  } catch (err) {
+    error.value = "Invalid credentials or failed to fetch!";
+    console.error(err);
+  } finally {
+    isLoading.value = false;
+  }
 };
 </script>
 
@@ -71,12 +75,11 @@ export default {
 body {
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #ffffff;
+  background: linear-gradient(180deg, #ff7e5f, #feb47b);
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
-  padding: 20px;
 }
 
 .container {
