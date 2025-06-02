@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router';
 import LoginPage from '../views/LoginPage.vue';
 import DashboardStudent from '../views/DashboardStudent.vue';
 import DashboardLecture from '../views/DashboardLecture.vue';
+import TimeTableStudent from '../views/TimeTableStudent.vue';
+import TimeTableLecture from '../views/TimeTableLecture.vue';
 
 const routes = [
   { path: '/', component: LoginPage },
