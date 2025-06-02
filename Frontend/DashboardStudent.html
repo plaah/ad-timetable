@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UTM Dashboard</title>
+  <style>
+    /* Original styles (completely unchanged) */
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f9f9f9;
+    }
+
+    header {
+      background-color: #1e2a4a;
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      font-size: 20px;
+      margin: 0;
+    }
+
+    .nav-tabs {
+      display: flex;
+      background: #fff;
+      padding: 10px 20px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .nav-tabs a {
+      margin-right: 20px;
+      text-decoration: none;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .nav-tabs a.active {
+      color: #7f1d1d;
+      border-bottom: 3px solid #7f1d1d;
+      padding-bottom: 5px;
+    }
+
+    .search-bar {
+      margin: 10px 20px;
+      max-width: 500px;
+    }
+
+    .search-bar input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    .section-title {
+      margin: 20px;
+      font-weight: bold;
+    }
+
+    .timetable-cards {
+      display: flex;
+      gap: 15px;
+      padding: 0 20px;
+      flex-wrap: wrap;
+    }
+
+    .timetable-card {
+      min-width: 150px;
+      padding: 15px;
+      border-radius: 12px;
+      background-color: #eee;
+      box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .timetable-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 1px 3px 8px rgba(0,0,0,0.15);
+    }
+
+    .updates {
+      margin: 20px;
+      max-width: 600px;
+    }
+
+    .update {
+      padding: 10px 0;
+      border-top: 1px dotted #aaa;
+    }
+
+    .update span {
+      font-weight: bold;
+      color: #7f1d1d;
+      margin-right: 5px;
+    }
+
+    .dashboard-container {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .left-section {
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .right-section {
+      flex: 1;
+      min-width: 300px;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-container {
+        flex-direction: column;
+      }
+    }
+
+    /* New sidebar styles (added without modifying original) */
+    .menu-icon {
+      font-size: 24px;
+      cursor: pointer;
+      color: white;
+    }
+
+    .sidebar {
+    height: 100%;
+    width: 0;
+    position: fixed;
+    z-index: 1000;
+    top: 0;
+    right: 0; /* ✅ Sekarang muncul dari kanan */
+    background-color: #1e2a4a;
+    overflow-x: hidden;
+    transition: 0.3s;
+    padding-top: 60px;
+  }
+
+
+    .sidebar-profile {
+      text-align: center;
+      padding: 20px;
+      color: white;
+      border-bottom: 1px solid #2c3a5a;
+    }
+
+    .profile-pic {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 15px;
+      border: 3px solid #7f1d1d;
+    }
+
+    .sidebar-menu {
+      padding: 20px 0;
+    }
+
+    .sidebar-menu a {
+      padding: 12px 20px;
+      text-decoration: none;
+      font-size: 16px;
+      color: white;
+      display: block;
+      transition: 0.2s;
+    }
+
+    .sidebar-menu a:hover {
+      background-color: #2c3a5a;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 25px;
+      font-size: 20px;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
+
+<!-- Header with visible menu icon -->
+<header>
+  <h1>Dashboard</h1>
+  <div id="menuToggle" style="font-size: 24px; cursor: pointer;">☰</div>
+</header>
+
+<!-- Sidebar (right side) -->
+<div id="sidebar" class="sidebar">
+  <a href="javascript:void(0)" class="close-btn" id="closeSidebar">&times;</a>
+  <div class="sidebar-profile">
+    <img src="https://via.placeholder.com/150" alt="Profile" class="profile-pic" id="profileImage">
+    <h3 id="userName">Student Name</h3>
+    <p id="userMatric">Matric: A12345678</p>
+  </div>
+  <div class="sidebar-menu">
+    <a href="#"><i class="fas fa-user"></i> Profile</a>
+    <a href="DashboardStudent.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+    <a href="#"><i class="fas fa-cog"></i> Settings</a>
+    <a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </div>
+</div>
+
+<!-- Original content (completely unchanged) -->
+<nav class="nav-tabs">
+  <a href="#" class="active">Home</a>
+  <a href="#" id="timetable-link">Timetable</a>
+</nav>
+
+<div class="search-bar">
+  <input type="text" placeholder="Search">
+</div>
+
+<div class="dashboard-container">
+  <div class="left-section">
+    <div class="section-title">Timetable</div>
+    <div class="timetable-cards" id="timetable-container">
+      <!-- JS will populate here -->
+    </div>
+  </div>
+
+  <div class="right-section">
+    <div class="section-title">Notification</div>
+    <div class="updates" id="updates-container">
+      <!-- JS will populate here -->
+    </div>
+  </div>
+</div>
+
+<script>
+  // Original JavaScript (unchanged)
+  window.addEventListener("DOMContentLoaded", () => {
+    const sessionId = sessionStorage.getItem("utm_session_id");
+    const fullName = sessionStorage.getItem("full_name") || "Student";
+
+    if (!sessionId) {
+      alert("You must log in first.");
+      window.location.href = "loginPage.html";
+      return;
+    }
+
+    // Populate timetable cards
+    const timetable = [
+      { title: 'ProdMNG 2021 EA', course: 'SMO 201 EA', lecturer: 'HONG Jisoo', bg: '#cce6f6' },
+      { title: 'Spanish 2 OB', course: 'LNG 215 OD', lecturer: 'CHWE Vernon', bg: '#fff2c6' },
+      { title: 'Japanese Pre-advanced', course: 'LNG 302 DC', lecturer: 'JEON Wonwoo', bg: '#fbd6dc' }
+    ];
+
+    const timetableContainer = document.getElementById('timetable-container');
+    timetable.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'timetable-card';
+      div.style.backgroundColor = item.bg;
+      div.addEventListener('click', () => {
+        window.location.href = 'StudentTimetable.html';
+      });
+
+      const title = document.createElement('h4');
+      title.textContent = item.title;
+      const course = document.createElement('p');
+      course.textContent = item.course;
+      const lecturer = document.createElement('p');
+      lecturer.style.fontSize = '12px';
+      lecturer.textContent = item.lecturer;
+
+      div.appendChild(title);
+      div.appendChild(course);
+      div.appendChild(lecturer);
+
+      timetableContainer.appendChild(div);
+    });
+
+    // Timetable link
+    document.getElementById('timetable-link').addEventListener('click', function(e) {
+      e.preventDefault();
+      window.location.href = 'StudentTimetable.html';
+    });
+
+    // Populate updates
+    const updates = [
+      { date: '07/07 (Wed)', label: 'New', text: 'ProdMNG - Submission completed' },
+      { date: '07/07 (Tue)', label: 'New', text: 'Global Management - new course published' },
+      { date: '07/06 (Tue)', label: '', text: 'Submission closed' },
+      { date: '07/05 (Mon)', label: '[Important]', text: 'Tuition for Fall Sem' },
+      { date: '07/05 (Mon)', label: '', text: 'Have you finished your MFA settings?' },
+    ];
+
+    const updContainer = document.getElementById('updates-container');
+    updates.forEach(upd => {
+      const div = document.createElement('div');
+      div.className = 'update';
+
+      const strongDate = document.createElement('strong');
+      strongDate.textContent = upd.date;
+
+      div.appendChild(strongDate);
+
+      if (upd.label) {
+        const spanLabel = document.createElement('span');
+        spanLabel.textContent = upd.label;
+        div.appendChild(spanLabel);
+      }
+
+      div.appendChild(document.createTextNode(' ' + upd.text));
+      updContainer.appendChild(div);
+    });
+
+    // Set user data in sidebar
+    document.getElementById('userName').textContent = fullName;
+    const matricNo = sessionStorage.getItem("matric_no") || "A12345678";
+    const userType = sessionStorage.getItem("user_type") || "student";
+    document.getElementById('userMatric').textContent = 
+      userType === 'lecturer' ? `Staff ID: ${matricNo}` : `Matric: ${matricNo}`;
+  });
+
+  // New sidebar functionality (added)
+       // Sidebar functionality (right side)
+    document.getElementById('menuToggle').addEventListener('click', function() {
+      document.getElementById('sidebar').style.width = '250px';
+    });
+
+    document.getElementById('closeSidebar').addEventListener('click', function() {
+      document.getElementById('sidebar').style.width = '0';
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', function(e) {
+      e.preventDefault();
+      sessionStorage.clear();
+      window.location.href = "loginPage.html";
+    });
+
+    // Close sidebar when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!document.getElementById('sidebar').contains(e.target) && 
+          e.target !== document.getElementById('menuToggle')) {
+        document.getElementById('sidebar').style.width = '0';
+      }
+    });
+</script>
+</body>
+</html>
