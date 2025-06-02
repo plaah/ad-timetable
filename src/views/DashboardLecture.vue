@@ -1,16 +1,401 @@
 <template>
-  <div>
-    <h1>Lecture Dashboard</h1>
-    <p>Welcome, {{ userName }}!</p>
+  <div id="app">
+    <header>
+      <button id="menu-button" @click="toggleSidebar" aria-label="Open menu" title="Open menu">☰</button>
+      <h1>Lecturer Dashboard</h1>
+    </header>
+
+    <nav class="nav-tabs">
+      <a href="#" :class="{ active: activeTab === 'home' }" @click="setActiveTab('home')">Home</a>
+      <a href="LecturerTimetable.html" :class="{ active: activeTab === 'timetable' }" @click="setActiveTab('timetable')">Timetable</a>
+    </nav>
+
+    <main class="main">
+      <section class="card-box">
+        <h4>Today's Classes</h4>
+        <div v-for="classInfo in todaysClasses" :key="classInfo.name" class="resource-card">
+          <h4>{{ classInfo.name }}</h4>
+          <p>{{ classInfo.time }}</p>
+          <p>Room: {{ classInfo.room }}</p>
+        </div>
+
+        <h4>Schedule Request Status</h4>
+        <div v-for="request in scheduleRequests" :key="request.date" class="update">
+          <strong>{{ request.date }}</strong>
+          <span :class="{ pending: request.status === 'PENDING', approved: request.status === 'APPROVED' }">
+            {{ request.status }}
+          </span>
+          {{ request.message }}
+        </div>
+      </section>
+
+      <section class="card-box">
+        <h4>Course Overview</h4>
+        <div class="overview-box">
+          <div class="overview-item blue">
+            <div>Total Courses</div>
+            <div style="font-size: 2rem;">{{ courseOverview.totalCourses }}</div>
+          </div>
+          <div class="overview-item yellow">
+            <div>Total Students</div>
+            <div style="font-size: 2rem;">{{ courseOverview.totalStudents }}</div>
+          </div>
+        </div>
+
+        <h4>Students per Course</h4>
+        <ul class="students-list">
+          <li v-for="course in courseOverview.courses" :key="course.name">
+            {{ course.name }} – {{ course.students }} students
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <!-- Sidebar -->
+    <div id="sidebar" :class="{ active: isSidebarActive }" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="profile-placeholder"></div>
+      <h3>Dr. John Doe</h3>
+      <button id="settings-btn" type="button" @click="navigateToSettings">Settings</button>
+      <button id="logout-btn" type="button" @click="logout">Logout</button>
+    </div>
+
+    <div :class="{ active: isSidebarActive }" id="overlay" @click="toggleSidebar"></div>
   </div>
 </template>
 
 <script>
-import { userName } from '../constants/ApiConstants';
-
 export default {
-  setup() {
-    return { userName };
+  data() {
+    return {
+      activeTab: 'home',
+      isSidebarActive: false,
+      todaysClasses: [
+        { name: 'SMO 201 EA', time: '08:00 - 10:00', room: 'B12-104' },
+        { name: 'LNG 302 DC', time: '13:00 - 15:00', room: 'C09-205' }
+      ],
+      scheduleRequests: [
+        { date: '2025-05-24', status: 'PENDING', message: 'Reschedule LNG 302 to Monday' },
+        { date: '2025-05-20', status: 'APPROVED', message: 'Move SMO 201 to Friday' }
+      ],
+      courseOverview: {
+        totalCourses: 3,
+        totalStudents: 78,
+        courses: [
+          { name: 'SMO 201 EA', students: 30 },
+          { name: 'LNG 215 OD', students: 25 },
+          { name: 'LNG 302 DC', students: 23 }
+        ]
+      }
+    };
   },
+  methods: {
+    setActiveTab(tab) {
+      this.activeTab = tab;
+    },
+    toggleSidebar() {
+      this.isSidebarActive = !this.isSidebarActive;
+    },
+    navigateToSettings() {
+      alert('Navigasi ke halaman Settings.');
+      this.toggleSidebar();
+    },
+    logout() {
+      alert('Logout berhasil.');
+      this.toggleSidebar();
+    }
+  }
 };
 </script>
+
+<style scoped>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f4f7fa;
+  color: #333;
+  overflow-x: hidden;
+}
+
+header {
+  background-color: #1e2a4a;
+  color: #fff;
+  padding: 16px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 3px solid #7f1d1d;
+  box-shadow: 0 2px 5px rgb(0 0 0 / 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+header h1 {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: 1px;
+}
+
+#menu-button {
+  font-size: 28px;
+  cursor: pointer;
+  user-select: none;
+  color: white;
+  transition: color 0.3s ease;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+  margin-right: auto;
+  margin-left: 0;
+}
+
+#menu-button:hover {
+  color: #ff6b6b;
+}
+
+nav.nav-tabs {
+  background: #fff;
+  display: flex;
+  gap: 24px;
+  padding: 14px 32px;
+  border-bottom: 1px solid #ddd;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+nav.nav-tabs a {
+  color: #555;
+  text-decoration: none;
+  padding-bottom: 6px;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+nav.nav-tabs a.active,
+nav.nav-tabs a:hover {
+  color: #7f1d1d;
+  font-weight: 700;
+}
+
+nav.nav-tabs a.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: #7f1d1d;
+  border-radius: 2px 2px 0 0;
+}
+
+.main {
+  max-width: 1200px;
+  margin: 30px auto 60px;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 32px;
+  padding: 0 20px;
+}
+
+@media (max-width: 900px) {
+  .main {
+    grid-template-columns: 1fr;
+  }
+}
+
+.section-title {
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: #1e2a4a;
+  margin-bottom: 16px;
+  letter-spacing: 0.03em;
+  border-left: 5px solid #7f1d1d;
+  padding-left: 12px;
+}
+
+.card-box {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px 24px;
+  box-shadow: 0 2px 5px rgb(0 0 0 / 0.05),
+              0 5px 15px rgb(0 0 0 / 0.07);
+}
+
+.card-box h4 {
+  color: #7f1d1d;
+  font-weight: 700;
+  margin-top: 0;
+}
+
+.resource-card {
+  background-color: #e9f1fc;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.06);
+  margin-bottom: 16px;
+}
+
+.resource-card:hover {
+  background-color: #d7e6fb;
+}
+
+.resource-card h4 {
+  margin: 0 0 6px 0;
+  color: #1e2a4a;
+  font-weight: 700;
+}
+
+.resource-card p {
+  margin: 2px 0;
+  font-size: 0.95rem;
+  color: #444;
+  font-weight: 500;
+}
+
+.overview-box {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.overview-item {
+  flex: 1;
+  text-align: center;
+  padding: 20px;
+  border-radius: 10px;
+  font-weight: bold;
+}
+
+.overview-item.blue {
+  background-color: #d0e7ff;
+  color: #1e2a4a;
+}
+
+.overview-item.yellow {
+  background-color: #fff3b0;
+  color: #7f1d1d;
+}
+
+.students-list {
+  list-style: disc;
+  padding-left: 20px;
+  margin-top: 8px;
+}
+
+.update {
+  border-top: 1px dotted #aaa;
+  padding: 12px 0;
+  font-size: 0.9rem;
+  color: #444;
+}
+
+.update strong {
+  color: #7f1d1d;
+}
+
+.update span {
+  background-color: #7f1d1d;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-right: 8px;
+}
+
+.update span.approved {
+  background-color: #2a9d8f;
+}
+
+/* Sidebar styles */
+#sidebar {
+  position: fixed;
+  top: 0;
+  left: -320px;
+  width: 320px;
+  height: 100%;
+  background: #1e2a4a;
+  color: white;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  transition: left 0.3s ease;
+  z-index: 200;
+}
+
+#sidebar.active {
+  left: 0;
+}
+
+#sidebar .profile-placeholder {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background-color: #ccc;
+  border: 4px solid #fff;
+}
+
+#sidebar h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+#sidebar button {
+  width: 100%;
+  padding: 14px 0;
+  border-radius: 8px;
+  border: none;
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+#settings-btn {
+  background-color: #7f1d1d;
+  color: white;
+}
+
+#settings-btn:hover {
+  background-color: #a22a2a;
+}
+
+#logout-btn {
+  background-color: #2a9d8f;
+  color: white;
+}
+
+#logout-btn:hover {
+  background-color: #248176;
+}
+
+#overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease;
+  z-index: 150;
+}
+
+#overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+</style>
