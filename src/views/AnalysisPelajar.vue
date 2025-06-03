@@ -1,6 +1,7 @@
 <script setup>
 //import { ref, onMounted } from "vue";
 //import SemesterApi from "@/api/SemesterApi";
+import { ref } from 'vue';
 import Toggle from "@/components/Toggle.vue";
 //import { userInfo, userName, userMatric } from "@/constants/ApiConstants.js";
 import ProfileBanner from "@/components/ProfileBanner.vue";
