@@ -30,7 +30,7 @@
 <script setup>
 console.log("Login Loaded . . . ");
 import { ref } from "vue";
-import AuthApi from "@/api/AuthenticationApi";
+import AuthApi from "@/api/AuthApi";
 import { useRouter } from "vue-router";
 
 const utmId = ref("");
@@ -42,43 +42,30 @@ const router = useRouter();
 
 const authApi = new AuthApi();
 
+// HANDLE LOGIN
 const handleLogin = async () => {
-  error.value = "";
-  try {
-    isLoading.value = true;
+    try {
+        isLoading.value = true;
+        const data = await authApi.login(login.value, password.value);
 
-    console.log("Sending login:", utmId.value, password.value);
-    const data = await authApi.login(utmId.value, password.value);
-
-    console.log("Received:", data);
-
-    if (Array.isArray(data) && data[0]?.session_id) {
-      alert("Login successful!");
-      localStorage.setItem(
-        "web.fc.utm.my_usersession",
-        JSON.stringify(data[0])
-      );
-      sessionId.value = data[0].session_id;
-
-      // 🔥 Tambahin redirect berdasarkan role
-      const role = data[0]?.role?.toLowerCase();
-      if (role === "student") {
-        router.push("/dashboard-student");
-      } else if (role === "lecture") {
-        router.push("/dashboard-lecture");
-      } else {
-        router.push("/"); // fallback kalau role nggak ada
-      }
-    } else {
-      error.value = "Invalid login response!";
-      console.warn("Unexpected response format:", data);
+        if (data?.[0]?.session_id) {
+            alert("Login successful!");
+            localStorage.setItem(
+                "web.fc.utm.my_usersession",
+                JSON.stringify(data[0])
+            );
+            sessionId.value = data[0].session_id;
+            window.location.replace("/main");
+        } else {
+            alert("Invalid login response!");
+            console.log("Response:", data);
+        }
+    } catch (error) {
+        alert("Invalid credentials or failed to fetch!");
+        console.error(error);
+    } finally {
+        isLoading.value = false;
     }
-  } catch (err) {
-    error.value = "Invalid credentials or failed to fetch!";
-    console.error(err);
-  } finally {
-    isLoading.value = false;
-  }
 };
 </script>
 

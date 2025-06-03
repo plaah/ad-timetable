@@ -61,6 +61,9 @@
 </template>
 
 <script>
+defineOptions({
+  name: 'PageMain'
+})
 export default {
   data() {
     return {
