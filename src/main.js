@@ -1,7 +1,7 @@
 import "./assets/main.css";
 
 import { createApp } from "vue";
-import App from "./App.vue";
+import StrangeApp from "./StrangeApp.vue";
 import router from "./router";
 
-createApp(App).use(router).mount("#app");
+createApp(StrangeApp).use(router).mount("#app");

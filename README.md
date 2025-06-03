@@ -1,24 +1,17 @@
-# ad-timetable
+# Strange Vue Project
 
-## Project setup
-```
+This is a modern Vue 3 + Vite application developed and maintained by **Group Strange**.
+
+## Tech Stack
+
+- [Vue 3](https://vuejs.org/)
+- [Vite](https://vitejs.dev/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Vue Router](https://router.vuejs.org/)
+- [Axios](https://axios-http.com/)
+
+## Getting Started
+
+### Install dependencies
+```bash
 npm install
-```
-
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
-
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
