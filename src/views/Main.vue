@@ -1,7 +1,6 @@
 <template>
-    <div class="bg-white font-[Poppins] min-h-screen">
+    <div class="bg-white font-[Poppins] min-h-screen" pt-20>
         <Toggle />
-        <ProfileBanner />
 
         <main class="flex flex-col items-center justify-center py-8 px-4">
             <!-- Profile Icon -->

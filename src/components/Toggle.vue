@@ -1,254 +1,265 @@
+<template>
+<!-- Header -->
+<header class="header flex items-center justify-between px-4 py-2 bg-[#008080] text-white fixed top-0 left-0 right-0 z-50">
+  <div class="flex items-center space-x-3">
+    <button @click="toggleSidebar" class="toggle-btn p-2 bg-white rounded text-[#008080]">
+      &#9776;
+    </button>
+    <!-- Tambahin title banner di sini -->
+    <span class="text-[#933b3b] font-['Poppins'] text-lg font-semibold ">
+      {{ titleBanner }}
+    </span>
+  </div>
+
+  <h1 class="title text-xl font-bold font-['Poppins']">Timely</h1>
+</header>
+
+
+  <!-- Sidebar -->
+  <div :class="['sidebar', { 'sidebar-closed': !sidebarOpen }]">
+    <div class="sidebar-header">
+      <h2>Menu</h2>
+      <button @click="toggleSidebar" class="close-btn">&#10005;</button>
+    </div>
+
+    <nav class="nav-links">
+      <a href="#" @click.prevent="loadMain"><AppIcon name="home" /> Home</a>
+      <a href="#" @click.prevent="loadTimetable"><AppIcon name="timetable" /> Timetable</a>
+      <a href="#" @click.prevent="loadRuang"><AppIcon name="ruang" /> Venue</a>
+      <a href="#" @click.prevent="loadSubjek"><AppIcon name="subjek" /> Subject</a>
+      <a href="#" @click.prevent="loadPensyarah"><AppIcon name="lecturer" /> Lecturer</a>
+      <a href="#" @click.prevent="loadPelajar"><AppIcon name="student" /> Pelajar</a>
+      <a href="#" @click.prevent="loadKurikulum"><AppIcon name="curriculum" /> Curriculum</a>
+      <a href="#" @click="logout"><AppIcon name="logout" /> Logout</a>
+    </nav>
+  </div>
+
+  <!-- Error Message -->
+  <div v-if="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <!-- Page Content -->
+  <slot />
+</template>
+
 <script setup>
 import { ref } from "vue";
+import AppIcon from "./AppIcon.vue";
+import { userInfo, userName, userMatric } from "@/constants/ApiConstants.js";
+
+const lsData = JSON.parse(localStorage.getItem("web.fc.utm.my_usersession"));
+if (lsData) {
+  userName.value = lsData.full_name;
+  userMatric.value = lsData.login_name;
+}
+
 const sidebarOpen = ref(false);
 const analysisOpen = ref(false);
-import AppIcon from "./AppIcon.vue";
-const error = ref(null); //Buat error
+const error = ref(null);
+const props = defineProps({
+  titleBanner: {
+    type: String,
+    default: "Welcome",
+  },
+});
 
-//button function
+
 const toggleSidebar = () => {
-    sidebarOpen.value = !sidebarOpen.value;
+  sidebarOpen.value = !sidebarOpen.value;
 };
 
 const loadMain = () => {
-    toggleSidebar();
-    window.location.href = "/main";
+  toggleSidebar();
+  window.location.href = "/main";
 };
-
 const loadTimetable = () => {
-    toggleSidebar();
-    window.location.href = "/timetable";
+  toggleSidebar();
+  window.location.href = "/timetable";
 };
-
 const loadRuang = () => {
-    toggleSidebar();
-    window.location.href = "/ruang";
+  toggleSidebar();
+  window.location.href = "/ruang";
 };
-
 const loadSubjek = () => {
-    toggleSidebar();
-    window.location.href = "/subjek";
+  toggleSidebar();
+  window.location.href = "/subjek";
 };
-
 const loadPensyarah = () => {
-    toggleSidebar();
-    window.location.href = "/pensyarah";
+  toggleSidebar();
+  window.location.href = "/pensyarah";
 };
-
 const loadPelajar = () => {
-    toggleSidebar();
-    window.location.href = "/pelajar";
+  toggleSidebar();
+  window.location.href = "/pelajar";
 };
-
 const loadKurikulum = () => {
-    toggleSidebar();
-    window.location.href = "/kurikulum";
+  toggleSidebar();
+  window.location.href = "/kurikulum";
 };
-
 const logout = () => {
-    localStorage.removeItem("web.fc.utm.my_usersession");
-    window.location.replace("/login");
+  localStorage.removeItem("web.fc.utm.my_usersession");
+  window.location.replace("/login");
 };
 
-//Analysis dropdown menu
-const loadMasaruang = () => {
-    toggleSidebar();
-    window.location.href = "/masaruang";
-};
-
-const loadAnalysisSubjek = () => {
-    toggleSidebar();
-    window.location.href = "/analysissubjek";
-};
-
-const loadAnalysisPelajar = () => {
-    toggleSidebar();
-    window.location.href = "/analysispelajar";
-};
-
-const loadClashRuang = () => {
-    toggleSidebar();
-    window.location.href = "/clashruang";
-};
-
-const loadClashPensyarah = () => {
-    toggleSidebar();
-    window.location.href = "/clashpensyarah";
-};
-
-const loadClashPelajar = () => {
-    toggleSidebar();
-    window.location.href = "/clashpelajar";
-};
-
-//error try catch
 const fetchWithErrorHandler = async (apiCall) => {
-    try {
-        error.value = null; // reset previous error
-        const result = await apiCall();
-        return result;
-    } catch (err) {
-        error.value = "Gagal mengambil data: " + (err.message || err);
-        console.error("[Fetch Error]", err);
-        // You can also show toast here if you use a toast library
-        return null;
-    }
+  try {
+    error.value = null;
+    return await apiCall();
+  } catch (err) {
+    error.value = "Gagal mengambil data: " + (err.message || err);
+    console.error("[Fetch Error]", err);
+    return null;
+  }
+
 };
 </script>
 
-<template>
-    <!-- header -->
-    <header
-        class="border-b-1 fixed top-0 left-0 z-2 w-full bg-gradient-to-br from-blue-100 via-blue-200 to-blue-300 text-black p-4 flex justify-between items-center"
-    >
-        <button @click="toggleSidebar" class="text-xl">&#9776;</button>
-        <h1 class="text-xl font-bold">FC Timetable</h1>
-        <!-- ada problem kalo make line header ini semua header bakal jadi tulisan header -->
-    </header>
-    <!-- sidebar -->
-    <div
-        :class="[
-            'fixed top-0 left-0 h-full w-64 bg-white shadow-lg transform transition-transform z-50',
-            { '-translate-x-full': !sidebarOpen },
-        ]"
-    >
-        <div
-            class="p-4 border-b-1 border-r-1 bg-gradient-to-br from-blue-200 via-blue-300 to-blue-400 flex justify-between items-center"
-        >
-            <h2 class="text-xl font-bold">menu</h2>
-            <button @click="toggleSidebar" class="text- xl">&times;</button>
-        </div>
-        <nav class="flex flex-col p-4 text-sm">
-            <a
-                href="#"
-                @click.prevent="loadMain"
-                class="py-2 text-gray-800 hover:bg-blue-100 rounded flex gap-3 items-center"
-                ><AppIcon name="home" class="w-5 h-5 text-blue-600" />
-                <p>Home</p></a
-            >
-            <a
-                href="#"
-                @click.prevent="loadTimetable"
-                class="py-2 text-gray-800 hover:bg-blue-100 rounded flex gap-3 items-center"
-                ><AppIcon name="timetable" class="w-5 h-5 text-blue-600" />
-                <p>Timetable</p></a
-            >
-            <div class="relative">
-                <button
-                    @click="analysisOpen = !analysisOpen"
-                    class="py-2 w-full text-left text-gray-800 hover:bg-blue-100 rounded flex justify-between items-center"
-                >
-                    <span
-                        class="text-gray-800 hover:bg-blue-100 rounded flex gap-3 items-center"
-                        ><AppIcon
-                            name="analysis"
-                            class="w-5 h-5 text-blue-600"
-                        />
-                        <p>Analysis</p></span
-                    >
-                    <span v-if="!analysisOpen">▼</span>
-                    <span v-else>▲</span>
-                </button>
-                <div
-                    v-show="analysisOpen"
-                    class="flex flex-col pl-4 mt-1 space-y-1 transition-all"
-                >
-                    <a
-                        href="#"
-                        @click.prevent="loadMasaruang"
-                        class="text-gray-700 hover:bg-blue-50 rounded px-2 py-1"
-                        >Masa & Ruang</a
-                    >
-                    <a
-                        href="#"
-                        @click.prevent="loadAnalysisSubjek"
-                        class="text-gray-700 hover:bg-blue-50 rounded px-2 py-1"
-                        >Subjek</a
-                    >
-                    <a
-                        href="#"
-                        @click.prevent="loadAnalysisPelajar"
-                        class="text-gray-700 hover:bg-blue-50 rounded px-2 py-1"
-                        >Pelajar</a
-                    >
-                    <a
-                        href="#"
-                        @click.prevent="loadClashRuang"
-                        class="text-gray-700 hover:bg-blue-50 rounded px-2 py-1"
-                        >Ruang Clash</a
-                    >
-                    <a
-                        href="#"
-                        @click.prevent="loadClashPensyarah"
-                        class="text-gray-700 hover:bg-blue-50 rounded px-2 py-1"
-                        >Pensyarah Clash</a
-                    >
-                    <a
-                        href="#"
-                        @click.prevent="loadClashPelajar"
-                        class="text-gray-700 hover:bg-blue-50 rounded px-2 py-1"
-                        >Pelajar Clash</a
-                    >
-                </div>
-            </div>
+<style scoped>
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: linear-gradient(to right, #fbeaea, #e8b9b9, #933b3b);
+  color: white;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 20;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  font-family: 'Segoe UI', sans-serif;
+}
 
-            <a
-                href="#"
-                @click.prevent="loadRuang"
-                class="py-2 text-gray-800 hover:bg-blue-100 rounded flex gap-3 items-center"
-                ><AppIcon name="ruang" class="w-5 h-5 text-blue-600" />
-                <p>Venue</p></a
-            >
-            <a
-                href="#"
-                @click.prevent="loadSubjek"
-                class="py-2 text-gray-800 hover:bg-blue-100 rounded flex gap-3 items-center"
-                ><AppIcon name="subjek" class="w-5 h-5 text-blue-600" />
-                <p>Subject</p></a
-            >
-            <a
-                href="#"
-                @click.prevent="loadPensyarah"
-                class="py-2 text-gray-800 hover:bg-blue-100 rounded flex gap-3 items-center"
-                ><AppIcon name="lecturer" class="w-5 h-5 text-blue-600" />
-                <p>Lecturer</p></a
-            >
-            <a
-                href="#"
-                @click.prevent="loadPelajar"
-                class="py-2 text-gray-800 hover:bg-blue-100 rounded flex gap-3 items-center"
-                ><AppIcon name="student" class="w-5 h-5 text-blue-600" />
-                <p>Pelajar</p></a
-            >
-            <a
-                href="#"
-                @click.prevent="loadKurikulum"
-                class="py-2 text-gray-800 hover:bg-blue-100 rounded flex gap-3 items-center"
-                ><AppIcon name="curriculum" class="w-5 h-5 text-blue-600" />
-                <p>Curriculum</p></a
-            >
-            <a
-                href="#"
-                @click="logout"
-                class="py-2 text-gray-800 hover:bg-blue-100 rounded flex gap-3 items-center"
-                ><AppIcon name="logout" class="w-5 h-5 text-blue-600" />
-                <p>Logout</p></a
-            >
-        </nav>
-    </div>
+.title {
+  font-size: 20px;
+  font-weight: bold;
+}
 
-    <!-- error message -->
-    <div>
-        <!-- Reusable Toggle button, layout, etc. -->
+.toggle-btn {
+  background: #933b3b; /* merah toska */
+  border: none;
+  color: white; /* icon putih */
+  font-size: 24px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 4px;
+}
 
-        <div
-            v-if="error"
-            class="bg-red-100 text-red-700 p-2 my-2 rounded text-sm"
-        >
-            {{ error }}
-        </div>
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 260px;
+  background-color: #933b3b; /* full merah toska */
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  z-index: 50;
+  overflow-y: auto;
+  transition: transform 0.3s ease;
+  font-family: 'Segoe UI', sans-serif;
+}
 
-        <!-- Use slot or default content here -->
-        <slot />
-    </div>
-</template>
+.sidebar-closed {
+  transform: translateX(-100%);
+}
+
+.sidebar-header {
+  padding: 15px 20px;
+  background-color: white; /* header sidebar putih */
+  color: #933b3b; /* tulisan merah */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #933b3b;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.nav-links {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 20px;
+}
+
+.nav-links a {
+  color: white;
+  text-decoration: none;
+  padding: 10px 8px;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+  font-family: 'Segoe UI', sans-serif;
+  transition: transform 0.2s ease;
+}
+
+.nav-links a:hover {
+  transform: scale(1.05); /* sedikit membesar */
+  background-color: rgba(255, 255, 255, 0.1); /* optional efek hover */
+}
+
+.dropdown {
+  margin-bottom: 10px;
+}
+
+.dropdown-btn {
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 10px 8px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Segoe UI', sans-serif;
+  transition: transform 0.2s ease;
+}
+
+.dropdown-btn:hover {
+  transform: scale(1.05);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dropdown-content {
+  padding-left: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdown-content a {
+  padding: 8px;
+  font-size: 14px;
+  color: white;
+  border-radius: 6px;
+  font-family: 'Segoe UI', sans-serif;
+  transition: transform 0.2s ease;
+}
+
+.dropdown-content a:hover {
+  transform: scale(1.05);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.error-message {
+  background-color: #fde2e2;
+  color: #d32f2f;
+  padding: 10px;
+  margin: 15px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: 'Segoe UI', sans-serif;
+}
+</style>

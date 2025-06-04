@@ -67,11 +67,10 @@ const setPage = (page) => {
 </script>
 
 <template>
-  <div class="bg-gray-100 min-h-screen">
-    <Toggle />
+  <div class="bg-gray-100 min-h-screen pt-20">
+    <Toggle titleBanner="Ruang"/>
 
     <main>
-      <ProfileBanner titleBanner="Ruang" />
 
       <div v-if="error" class="text-red-600 text-center mt-2 text-sm">
         {{ error }}

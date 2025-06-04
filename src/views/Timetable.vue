@@ -147,12 +147,12 @@ watch(
 </script>
 
 <template>
-    <div class="bg-gray-50 min-h-screen">
-        <Toggle />
+    <div class="bg-gray-50 min-h-screen pt-20">
+        <Toggle titleBanner="Timetable" />
 
         <!-- Mobile-style Header -->
-        <div class="bg-white shadow-sm">
-            <ProfileBanner titleBanner="Timetable" />
+        <div class="bg-white shadow-sm pt-2">
+            
 
             <!-- Controls -->
             <div class="px-4 py-2">
@@ -190,19 +190,19 @@ watch(
                         class="flex flex-col items-center cursor-pointer p-2 rounded-lg transition-colors"
                         :class="
                             selectedDay === index
-                                ? 'bg-blue-100'
-                                : 'hover:bg-gray-100'
+                                ? 'bg-[#933b3b] text-white'
+                                : 'hover:bg-white-100'
                         "
                     >
-                        <span class="text-xs text-gray-500 mb-1">{{
+                        <span class="text-xs text-white-500 mb-1">{{
                             day.substring(0, 3)
                         }}</span>
                         <div
                             class="w-8 h-8 flex items-center justify-center rounded-full text-sm font-medium"
                             :class="
                                 selectedDay === index
-                                    ? 'bg-blue-500 text-white'
-                                    : 'text-gray-700'
+                                    ? 'bg-[#e8b9b9] text-white'
+                                    : 'text-white-700'
                             "
                         ></div>
                     </div>

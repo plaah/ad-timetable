@@ -41,12 +41,10 @@ const lecturers = ref([
 </script>
 
 <template>
-    <div class="bg-gray-100 min-h-screen">
-        <Toggle />
+    <div class="bg-gray-100 min-h-screen pt-20">
+        <Toggle titleBanner="Pensyarah" />
 
         <main>
-            <!-- Banner -->
-            <ProfileBanner titleBanner="Pensyarah" />
 
             <!-- Card UI Section -->
             <div class="flex flex-col gap-4 px-4 py-4">

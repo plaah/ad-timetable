@@ -81,12 +81,10 @@ function gotoPage(page) {
 </script>
 
 <template>
-  <div class="bg-gray-100 min-h-screen">
-    <Toggle />
+  <div class="bg-gray-100 min-h-screen pt-20">
+    <Toggle titleBanner="Subjek"/>
 
     <main>
-      <!-- Banner -->
-      <ProfileBanner titleBanner="Subjek" />
 
       <!-- Filters (keep simple for now) -->
       <div class="flex flex-wrap items-center gap-3 px-4 py-2">

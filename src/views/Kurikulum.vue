@@ -52,11 +52,9 @@ const curricula = ref([
 </script>
 
 <template>
-    <div class="bg-gray-100 min-h-screen">
-        <Toggle />
+    <div class="bg-gray-100 min-h-screen pt-20">
+        <Toggle ProfileBanner titleBanner="Kurikulum"/>
 
-        <!-- Banner -->
-        <ProfileBanner titleBanner="Kurikulum" />
 
         <!-- Card List -->
         <div class="flex flex-col gap-4 px-4 py-2">
