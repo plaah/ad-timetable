@@ -40,7 +40,7 @@ const handleLogin = async () => {
   <div class="login-body">
     <div class="container">
       <img src="/UTM-LOGO-FULL.png" alt="UTM Logo" class="utm-logo" />
-      
+      <h1>UTM</h1>
       <div class="timely">Timely</div>
 
       <form @submit.prevent="handleLogin">
@@ -94,12 +94,10 @@ const handleLogin = async () => {
 }
 
 .utm-logo {
-  display: block;
-  margin: 0 auto; /* bikin dia ke tengah */
-  max-width: 200px; /* ubah ukuran sesuai selera, bisa 150px, 180px, dll */
+  width: 90px;
   height: auto;
+  margin-bottom: 10px;
 }
-
 
 h1 {
   margin: 5px 0;
