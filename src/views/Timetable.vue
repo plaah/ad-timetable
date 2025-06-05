@@ -1,298 +1,267 @@
+<template>
+  <div class="bg-gradient-to-b from-gray-50 to-white min-h-screen pt-20">
+    <Toggle titleBanner="Timetable" />
+
+    <!-- Greeting -->
+    <div class="px-6 mt-4 flex items-center justify-between">
+      <div>
+        <h2 class="text-xl font-semibold text-[#933b3b]">
+          📅 {{ greeting }}, {{ userName || 'Student' }}
+        </h2>
+        <p class="text-sm text-gray-500">
+          Here's your schedule for <span class="font-medium">{{ days[selectedDay] }}</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Tab Switcher -->
+    <div class="px-6 mt-6 flex gap-2">
+      <button
+        @click="switchView('daily')"
+        :class="viewMode === 'daily' ? 'bg-[#933b3b] text-white scale-105' : 'bg-white text-gray-600 border'"
+        class="px-4 py-2 rounded-lg text-sm font-medium shadow-sm border transition-transform duration-300"
+      >
+        🗓️ Daily View
+      </button>
+      <button
+        @click="switchView('weekly')"
+        :class="viewMode === 'weekly' ? 'bg-[#933b3b] text-white scale-105' : 'bg-white text-gray-600 border'"
+        class="px-4 py-2 rounded-lg text-sm font-medium shadow-sm border transition-transform duration-300"
+      >
+        📆 Weekly View
+      </button>
+    </div>
+
+    <!-- DAILY VIEW -->
+    <div v-show="viewMode === 'daily'">
+      <div class="px-6 py-4 bg-white shadow rounded-xl mx-4 mt-6">
+        <div class="flex justify-end">
+          <select v-model="activeSession" class="rounded-lg border px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#933b3b]">
+            <option v-for="session in sessionOptions" :key="session" :value="session">{{ session }}</option>
+          </select>
+        </div>
+        <div class="flex justify-between mt-6 text-sm font-medium">
+          <div v-for="(day, i) in days" :key="i" @click="selectedDay = i"
+            class="px-3 py-2 rounded-lg cursor-pointer transition-all"
+            :class="selectedDay === i ? 'bg-[#933b3b] text-white shadow-md' : 'hover:bg-gray-200 text-gray-700'">
+            {{ day }}
+          </div>
+        </div>
+      </div>
+
+      <div v-if="isLoading" class="text-center py-10 text-[#933b3b] font-medium animate-pulse">
+        Loading your schedule...
+      </div>
+
+      <div v-else class="px-6 py-6">
+        <TransitionGroup name="fade" tag="div">
+          <div v-for="(item, i) in daySchedule" :key="item.time + i"
+            class="flex items-start border-l-4 p-5 rounded-xl shadow-md mb-4 backdrop-blur-sm"
+            :class="item.color">
+            <div class="text-xs text-gray-600 min-w-[60px] text-center">
+              <div class="font-bold">{{ item.time.split('-')[0] }}</div>
+              <div class="text-gray-400">{{ item.time.split('-')[1] }}</div>
+            </div>
+            <div class="ml-6">
+              <div class="font-semibold text-gray-800 text-base flex items-center gap-2">
+                🎓 <span>{{ item.subject }}</span>
+              </div>
+              <div class="text-sm text-gray-600 italic">📘 {{ item.subjectName }}</div>
+              <div class="text-sm text-gray-500 mt-1">
+                Section: {{ item.section }} <span v-if="item.room">| 📍 Room: {{ item.room }}</span>
+              </div>
+            </div>
+          </div>
+        </TransitionGroup>
+
+        <div v-if="daySchedule.length === 0" class="text-center text-gray-500 py-12">
+          No classes scheduled on {{ days[selectedDay] }}.
+        </div>
+      </div>
+    </div>
+
+    <!-- WEEKLY VIEW -->
+    <div v-show="viewMode === 'weekly'">
+      <div class="flex justify-end px-6 mt-6">
+        <button @click="exportWeekToPDF"
+          class="bg-[#933b3b] text-white px-4 py-2 rounded-lg text-sm shadow hover:bg-[#7c3232] transition">
+          🧾 Export Full Week to PDF
+        </button>
+      </div>
+      <div id="week-pdf" class="overflow-auto mt-4 px-6">
+        <table class="min-w-full border border-gray-300 rounded-xl text-sm text-left bg-white shadow">
+          <thead class="bg-[#933b3b] text-white">
+            <tr>
+              <th class="p-3 border-r border-white">Time</th>
+              <th v-for="day in days" :key="day" class="p-3 border-r border-white">{{ day }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="(row, timeIdx) in timetableData.filter(r => parseInt(r.waktu.split('-')[0]) < 17)"
+              :key="row.waktu"
+              class="border-t border-gray-300"
+            >
+              <td class="p-3 font-semibold text-gray-700">{{ row.waktu }}</td>
+              <td v-for="(slot, i) in row.slots" :key="i" class="p-3 align-top">
+                <div v-if="slot">
+                  <div class="font-bold">{{ slot.split('\\n')[0] }}</div>
+                  <div class="text-xs text-gray-600">{{ slot.split('\\n')[1] }}</div>
+                  <div class="text-xs text-gray-500">{{ slot.split('\\n')[2] }}</div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</template>
+
 <script setup>
 import PelajarSubjekApi from "@/api/PelajarSubjekApi";
 import JadualSubjekApi from "@/api/JadualSubjekApi";
 import Toggle from "@/components/Toggle.vue";
-import ProfileBanner from "@/components/ProfileBanner.vue";
 import { ref, computed, onMounted, watch } from "vue";
-import { userMatric } from "@/constants/ApiConstants";
-import { timetable } from "@/constants/TimetableConstants";
-import { days } from "@/constants/TimetableConstants";
+import html2pdf from "html2pdf.js";
+import { userMatric, userName } from "@/constants/ApiConstants";
+import { timetable, days } from "@/constants/TimetableConstants";
 
-// Settings
-const activeSemester = ref(1);
-const activeSesi = ref("2024/2025");
-const selectedDay = ref(0); // 0 = Sunday, 1 = Monday, etc.
+const viewMode = ref("daily");
+const switchView = (mode) => { viewMode.value = mode; };
 
-// Available sessions/years
-const availableSessions = ["2024/2025", "2023/2024", "2022/2023", "2021/2022"];
+const activeSession = ref("2024/2025 - 2");
+const selectedDay = ref(new Date().getDay());
+const sessionOptions = ["2024/2025 - 2", "2024/2025 - 1", "2023/2024 - 2", "2023/2024 - 1"];
 
-// Main reactive state
 const subjectList = ref([]);
 const timetableData = ref(JSON.parse(JSON.stringify(timetable)));
+const isLoading = ref(true);
 
-// API class instances
+// Load user
+const lsData = JSON.parse(localStorage.getItem("web.fc.utm.my_usersession"));
+if (lsData) {
+  userName.value = lsData.full_name;
+  userMatric.value = lsData.login_name;
+}
+
+const greeting = computed(() => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+});
+
 const pelajarSubjekApi = new PelajarSubjekApi();
 const jadualSubjekApi = new JadualSubjekApi();
 
-// Get current date info
-const currentDate = new Date();
-const currentMonth = currentDate.toLocaleDateString("en-US", { month: "long" });
-const currentDayOfMonth = currentDate.getDate();
-const currentDayOfWeek = currentDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-
-// Set selected day to current day
-selectedDay.value = currentDayOfWeek;
-
-// Color palette for different subjects
-const subjectColors = [
-    "bg-purple-200 border-purple-300",
-    "bg-blue-200 border-blue-300",
-    "bg-pink-200 border-pink-300",
-    "bg-orange-200 border-orange-300",
-    "bg-green-200 border-green-300",
-    "bg-yellow-200 border-yellow-300",
-    "bg-indigo-200 border-indigo-300",
-    "bg-red-200 border-red-300",
-];
-
-// Get all subjects for this student
 onMounted(async () => {
-    try {
-        subjectList.value = await pelajarSubjekApi.getTimetableInfo(
-            userMatric.value
-        );
-    } catch (error) {
-        console.log("timetable error api: " + error);
-    }
+  isLoading.value = true;
+  try {
+    subjectList.value = await pelajarSubjekApi.getTimetableInfo(userMatric.value);
+  } catch (err) {
+    console.error("Error loading subject list", err);
+  } finally {
+    isLoading.value = false;
+  }
 });
 
-// Compute the filtered subjects based on the current semester/sesi
-const filteredSubjects = computed(() =>
-    subjectList.value.filter(
-        (s) =>
-            s.semester === activeSemester.value && s.sesi === activeSesi.value
-    )
-);
+const filteredSubjects = computed(() => {
+  const [sesi, sem] = activeSession.value.split(" - ");
+  return subjectList.value.filter(s => s.sesi === sesi && s.semester == sem);
+});
 
-// Parse timetable data into structured format for the selected day
 const daySchedule = computed(() => {
-    const schedule = [];
-    const subjectColorMap = new Map();
-    let colorIndex = 0;
+  const schedule = [];
+  const colorMap = new Map();
+  let colorIndex = 0;
+  const colors = [
+    "bg-[#f9dcdc] border-[#933b3b]",
+    "bg-[#f0e0e0] border-[#933b3b]",
+    "bg-[#f7eaea] border-[#933b3b]",
+    "bg-[#fae3e3] border-[#933b3b]",
+    "bg-[#ffecec] border-[#933b3b]",
+    "bg-[#ffe2e2] border-[#933b3b]",
+  ];
 
-    timetableData.value.forEach((row, timeIndex) => {
-        const daySlot = row.slots[selectedDay.value];
-        if (daySlot && daySlot.trim()) {
-            const lines = daySlot.split("\n");
-            const subjectCode = lines[0]?.trim();
-            const section = lines[1]?.replace("section :", "").trim();
-            const room = lines[2]?.trim();
-
-            // Find the subject name from filteredSubjects
-            const subjectInfo = filteredSubjects.value.find(
-                (s) => s.kod_subjek === subjectCode
-            );
-            const subjectName = subjectInfo?.nama_subjek || "";
-
-            // Assign color to subject if not already assigned
-            if (!subjectColorMap.has(subjectCode)) {
-                subjectColorMap.set(
-                    subjectCode,
-                    subjectColors[colorIndex % subjectColors.length]
-                );
-                colorIndex++;
-            }
-
-            schedule.push({
-                time: row.waktu,
-                subject: subjectCode,
-                subjectName: subjectName,
-                section: section,
-                room: room,
-                color: subjectColorMap.get(subjectCode),
-            });
-        }
-    });
-
-    return schedule;
+  timetableData.value.forEach((row, timeIdx) => {
+    const slot = row.slots[selectedDay.value];
+    if (slot && slot.trim()) {
+      const [code, secRaw, room] = slot.split("\n");
+      const section = secRaw?.replace("section :", "").trim();
+      const info = filteredSubjects.value.find(s => s.kod_subjek === code.trim());
+      if (!colorMap.has(code)) {
+        colorMap.set(code, colors[colorIndex % colors.length]);
+        colorIndex++;
+      }
+      schedule.push({
+        time: row.waktu,
+        subject: code.trim(),
+        subjectName: info?.nama_subjek || "",
+        section,
+        room: room?.trim(),
+        color: colorMap.get(code),
+      });
+    }
+  });
+  return schedule;
 });
 
-// Watch for changes to semester/sesi and update the timetable
-watch(
-    [filteredSubjects, activeSemester, activeSesi],
-    async ([newFilteredSubjects]) => {
-        timetableData.value = JSON.parse(JSON.stringify(timetable));
-        if (!newFilteredSubjects.length) {
-            console.warn("No subjects for current semester/sesi!");
-            return;
-        }
+watch(filteredSubjects, async (newSubs) => {
+  isLoading.value = true;
+  timetableData.value = JSON.parse(JSON.stringify(timetable));
+  try {
+    const schedules = (await Promise.all(newSubs.map(s =>
+      jadualSubjekApi.getSubjectSchedule({
+        kod_subjek: s.kod_subjek,
+        seksyen: s.seksyen,
+        sesi: s.sesi,
+        semester: s.semester
+      })
+    ))).flat();
 
-        const schedulePromises = newFilteredSubjects.map((s) =>
-            jadualSubjekApi.getSubjectSchedule({
-                kod_subjek: s.kod_subjek,
-                seksyen: s.seksyen,
-                sesi: s.sesi,
-                semester: s.semester,
-            })
-        );
-        const allSchedules = (await Promise.all(schedulePromises)).flat();
+    schedules.forEach(i => {
+      const rIdx = (i.masa ?? 1) - 1;
+      const cIdx = (i.hari ?? 1) - 1;
+      if (timetableData.value[rIdx] && timetableData.value[rIdx].slots[cIdx] !== undefined) {
+        timetableData.value[rIdx].slots[cIdx] = `${i.kod_subjek}\nsection : ${i.seksyen}\n   ${i.ruang?.nama_ruang_singkatan ?? ""}`;
+      }
+    });
+  } catch (e) {
+    console.error("Error fetching timetable data", e);
+  } finally {
+    isLoading.value = false;
+  }
+});
 
-        allSchedules.forEach((item) => {
-            const rowIdx = (item.masa ?? 1) - 1;
-            const colIdx = (item.hari ?? 1) - 1;
-            if (
-                timetableData.value[rowIdx] &&
-                timetableData.value[rowIdx].slots[colIdx] !== undefined
-            ) {
-                timetableData.value[rowIdx].slots[colIdx] = `${
-                    item.kod_subjek
-                }\nsection : ${item.seksyen}\n   ${
-                    item.ruang?.nama_ruang_singkatan ?? ""
-                }`;
-            }
-        });
-    },
-    { immediate: true }
-);
+const exportWeekToPDF = () => {
+  const element = document.getElementById("week-pdf");
+  if (!element) return;
+  const opt = {
+    margin: 0.5,
+    filename: `Weekly_Timetable_${userMatric.value}.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: "in", format: "a4", orientation: "landscape" },
+  };
+  html2pdf().set(opt).from(element).save().catch(err => console.error("PDF export failed", err));
+};
 </script>
 
-<template>
-    <div class="bg-gray-50 min-h-screen pt-20">
-        <Toggle titleBanner="Timetable" />
-
-        <!-- Mobile-style Header -->
-        <div class="bg-white shadow-sm pt-2">
-            
-
-            <!-- Controls -->
-            <div class="px-4 py-2">
-                <div class="flex items-center justify-between mb-4">
-                    <div></div>
-                    <div class="flex items-center space-x-2">
-                        <select
-                            v-model="activeSesi"
-                            class="text-sm border border-gray-300 rounded-lg px-3 py-1 bg-white"
-                        >
-                            <option
-                                v-for="session in availableSessions"
-                                :key="session"
-                                :value="session"
-                            >
-                                {{ session }}
-                            </option>
-                        </select>
-                        <select
-                            v-model.number="activeSemester"
-                            class="text-sm border border-gray-300 rounded-lg px-3 py-1 bg-white"
-                        >
-                            <option value="1">Sem 1</option>
-                            <option value="2">Sem 2</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Week View -->
-                <div class="flex justify-between mb-4">
-                    <div
-                        v-for="(day, index) in days"
-                        :key="index"
-                        @click="selectedDay = index"
-                        class="flex flex-col items-center cursor-pointer p-2 rounded-lg transition-colors"
-                        :class="
-                            selectedDay === index
-                                ? 'bg-[#933b3b] text-white'
-                                : 'hover:bg-white-100'
-                        "
-                    >
-                        <span class="text-xs text-white-500 mb-1">{{
-                            day.substring(0, 3)
-                        }}</span>
-                        <div
-                            class="w-8 h-8 flex items-center justify-center rounded-full text-sm font-medium"
-                            :class="
-                                selectedDay === index
-                                    ? 'bg-[#e8b9b9] text-white'
-                                    : 'text-white-700'
-                            "
-                        ></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Today Section -->
-        <div class="px-4 py-4">
-            <!-- Schedule Cards -->
-            <div class="space-y-3">
-                <div
-                    v-for="(item, index) in daySchedule"
-                    :key="index"
-                    class="flex items-start space-x-3 p-4 rounded-xl border-l-4 shadow-sm"
-                    :class="item.color"
-                >
-                    <div
-                        class="flex flex-col items-center text-xs text-gray-600 min-w-[50px]"
-                    >
-                        <span class="font-medium">{{
-                            item.time.split("-")[0]
-                        }}</span>
-                        <span class="text-gray-400">{{
-                            item.time.split("-")[1]
-                        }}</span>
-                    </div>
-
-                    <div class="flex-1">
-                        <h4 class="font-medium text-gray-800 mb-1">
-                            {{ item.subject }}
-                        </h4>
-                        <p class="text-sm text-gray-600 mb-2">
-                            {{ item.subjectName }}
-                        </p>
-                        <div
-                            class="flex items-center space-x-4 text-sm text-gray-600"
-                        >
-                            <span>Section: {{ item.section }}</span>
-                            <span v-if="item.room">📍 {{ item.room }}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Empty state -->
-                <div v-if="daySchedule.length === 0" class="text-center py-8">
-                    <div
-                        class="w-16 h-16 mx-auto mb-3 bg-gray-100 rounded-full flex items-center justify-center"
-                    >
-                        <svg
-                            class="w-8 h-8 text-gray-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                            ></path>
-                        </svg>
-                    </div>
-                    <p class="text-gray-500 text-sm">
-                        No classes scheduled for {{ days[selectedDay] }}
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="px-4 py-6 text-center">
-            <p class="text-xs text-gray-500">
-                Jika anda mempunyai sebarang komen atau pertanyaan mengenai
-                halaman web ini sila hubungi webmaster di
-                <a
-                    href="mailto:ttms@fc.utm.my"
-                    class="text-purple-600 hover:underline"
-                    >ttms@fc.utm.my</a
-                ><br />
-                Hakcipta Terpelihara © 2002-2025, Fakulti Komputeran, UTM
-            </p>
-        </div>
-    </div>
-</template>
-
 <style scoped>
-/* Custom scrollbar for mobile feel */
-::-webkit-scrollbar {
-    width: 0px;
-    background: transparent;
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.3s ease;
+}
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+button:active {
+  transform: scale(0.95);
 }
 </style>

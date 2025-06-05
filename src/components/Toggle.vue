@@ -1,34 +1,32 @@
 <template>
-<!-- Header -->
-<header class="header flex items-center justify-between px-4 py-2 bg-[#008080] text-white fixed top-0 left-0 right-0 z-50">
-  <div class="flex items-center space-x-3">
-    <button @click="toggleSidebar" class="toggle-btn p-2 bg-white rounded text-[#008080]">
-      &#9776;
-    </button>
-    <!-- Tambahin title banner di sini -->
-    <span class="text-[#933b3b] font-['Poppins'] text-lg font-semibold ">
-      {{ titleBanner }}
-    </span>
-  </div>
-
-  <h1 class="title text-xl font-bold font-['Poppins']">Timely</h1>
-</header>
-
+  <!-- Header -->
+  <header class="header fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-3 bg-gradient-to-r from-[#5a2a2a] via-[#933b3b] to-[#ba5757] text-white shadow-md">
+    <div class="flex items-center space-x-4">
+      <button @click="toggleSidebar" class="toggle-btn hover:scale-105 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+      <span class="text-lg font-semibold font-poppins tracking-wide">
+        {{ titleBanner }}
+      </span>
+    </div>
+    <h1 class="text-xl font-bold font-poppins tracking-wider">Timely</h1>
+  </header>
 
   <!-- Sidebar -->
   <div :class="['sidebar', { 'sidebar-closed': !sidebarOpen }]">
     <div class="sidebar-header">
-      <h2>Menu</h2>
-      <button @click="toggleSidebar" class="close-btn">&#10005;</button>
+      <h2>Navigation</h2>
+      <button @click="toggleSidebar" class="close-btn">×</button>
     </div>
-
     <nav class="nav-links">
       <a href="#" @click.prevent="loadMain"><AppIcon name="home" /> Home</a>
       <a href="#" @click.prevent="loadTimetable"><AppIcon name="timetable" /> Timetable</a>
       <a href="#" @click.prevent="loadRuang"><AppIcon name="ruang" /> Venue</a>
       <a href="#" @click.prevent="loadSubjek"><AppIcon name="subjek" /> Subject</a>
       <a href="#" @click.prevent="loadPensyarah"><AppIcon name="lecturer" /> Lecturer</a>
-      <a href="#" @click.prevent="loadPelajar"><AppIcon name="student" /> Pelajar</a>
+      <a href="#" @click.prevent="loadPelajar"><AppIcon name="student" /> Student</a>
       <a href="#" @click.prevent="loadKurikulum"><AppIcon name="curriculum" /> Curriculum</a>
       <a href="#" @click="logout"><AppIcon name="logout" /> Logout</a>
     </nav>
@@ -46,7 +44,7 @@
 <script setup>
 import { ref } from "vue";
 import AppIcon from "./AppIcon.vue";
-import { userInfo, userName, userMatric } from "@/constants/ApiConstants.js";
+import { userName, userMatric } from "@/constants/ApiConstants.js";
 
 const lsData = JSON.parse(localStorage.getItem("web.fc.utm.my_usersession"));
 if (lsData) {
@@ -55,7 +53,6 @@ if (lsData) {
 }
 
 const sidebarOpen = ref(false);
-const analysisOpen = ref(false);
 const error = ref(null);
 const props = defineProps({
   titleBanner: {
@@ -63,7 +60,6 @@ const props = defineProps({
     default: "Welcome",
   },
 });
-
 
 const toggleSidebar = () => {
   sidebarOpen.value = !sidebarOpen.value;
@@ -101,80 +97,43 @@ const logout = () => {
   localStorage.removeItem("web.fc.utm.my_usersession");
   window.location.replace("/login");
 };
-
-const fetchWithErrorHandler = async (apiCall) => {
-  try {
-    error.value = null;
-    return await apiCall();
-  } catch (err) {
-    error.value = "Gagal mengambil data: " + (err.message || err);
-    console.error("[Fetch Error]", err);
-    return null;
-  }
-
-};
 </script>
 
 <style scoped>
 .header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  background: linear-gradient(to right, #fbeaea, #e8b9b9, #933b3b);
-  color: white;
-  padding: 15px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  z-index: 20;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   font-family: 'Segoe UI', sans-serif;
 }
-
-.title {
-  font-size: 20px;
-  font-weight: bold;
-}
-
 .toggle-btn {
-  background: #933b3b; /* merah toska */
+  background-color: transparent;
+  color: white;
+  padding: 6px;
   border: none;
-  color: white; /* icon putih */
-  font-size: 24px;
-  cursor: pointer;
-  padding: 6px 10px;
-  border-radius: 4px;
+  border-radius: 6px;
 }
-
 .sidebar {
   position: fixed;
   top: 0;
   left: 0;
   height: 100%;
   width: 260px;
-  background-color: #933b3b; /* full merah toska */
-  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  background-color: #933b3b;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
   z-index: 50;
   overflow-y: auto;
   transition: transform 0.3s ease;
-  font-family: 'Segoe UI', sans-serif;
 }
-
 .sidebar-closed {
   transform: translateX(-100%);
 }
-
 .sidebar-header {
+  background-color: white;
+  color: #933b3b;
   padding: 15px 20px;
-  background-color: white; /* header sidebar putih */
-  color: #933b3b; /* tulisan merah */
+  font-weight: bold;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-weight: bold;
 }
-
 .close-btn {
   background: none;
   border: none;
@@ -182,84 +141,32 @@ const fetchWithErrorHandler = async (apiCall) => {
   font-size: 20px;
   cursor: pointer;
 }
-
 .nav-links {
   display: flex;
   flex-direction: column;
-  padding: 10px 20px;
+  padding: 15px 20px;
 }
-
 .nav-links a {
   color: white;
   text-decoration: none;
-  padding: 10px 8px;
+  padding: 12px;
+  margin-bottom: 6px;
   border-radius: 8px;
-  margin-bottom: 4px;
   display: flex;
   align-items: center;
   gap: 10px;
   font-weight: 500;
-  font-family: 'Segoe UI', sans-serif;
-  transition: transform 0.2s ease;
+  transition: all 0.2s;
 }
-
 .nav-links a:hover {
-  transform: scale(1.05); /* sedikit membesar */
-  background-color: rgba(255, 255, 255, 0.1); /* optional efek hover */
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.03);
 }
-
-.dropdown {
-  margin-bottom: 10px;
-}
-
-.dropdown-btn {
-  width: 100%;
-  background: none;
-  border: none;
-  text-align: left;
-  padding: 10px 8px;
-  color: white;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-family: 'Segoe UI', sans-serif;
-  transition: transform 0.2s ease;
-}
-
-.dropdown-btn:hover {
-  transform: scale(1.05);
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.dropdown-content {
-  padding-left: 15px;
-  display: flex;
-  flex-direction: column;
-}
-
-.dropdown-content a {
-  padding: 8px;
-  font-size: 14px;
-  color: white;
-  border-radius: 6px;
-  font-family: 'Segoe UI', sans-serif;
-  transition: transform 0.2s ease;
-}
-
-.dropdown-content a:hover {
-  transform: scale(1.05);
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
 .error-message {
-  background-color: #fde2e2;
-  color: #d32f2f;
+  background-color: #fdecea;
+  color: #c53030;
   padding: 10px;
   margin: 15px;
   border-radius: 6px;
-  font-size: 14px;
-  font-family: 'Segoe UI', sans-serif;
 }
 </style>
