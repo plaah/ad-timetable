@@ -1,12 +1,10 @@
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import Toggle from "@/components/Toggle.vue";
-import ProfileBanner from "@/components/ProfileBanner.vue";
 import SemesterApi from "@/api/SemesterApi";
 import SubjekApi from "@/api/SubjekApi";
 import { userInfo, userName, userMatric } from "@/constants/ApiConstants.js";
 
-// Set user info
 const lsData = JSON.parse(localStorage.getItem("web.fc.utm.my_usersession"));
 if (lsData) {
   userName.value = lsData.full_name;
@@ -14,21 +12,18 @@ if (lsData) {
 }
 
 const selectedKurikulum = ref("Semua");
-const selectedSubject = ref("Semua");
+const searchQuery = ref("");
 
 const subjectRows = ref([]);
 const error = ref(null);
-
 const semesterApi = new SemesterApi();
 const subjekApi = new SubjekApi();
-
 const currentSession = ref("");
 const currentSemester = ref("");
 
 const itemsPerPage = 10;
 const currentPage = ref(1);
 
-// Fetch and process data
 onMounted(async () => {
   try {
     const sessionData = await semesterApi.getCurrentSemesterInfo();
@@ -38,7 +33,6 @@ onMounted(async () => {
 
       const subjectData = await subjekApi.getSubjectSections(currentSession.value, currentSemester.value);
 
-      // Expect subjectData to be array of subjects, each with seksyen_list
       if (Array.isArray(subjectData)) {
         subjectRows.value = subjectData.flatMap(subj =>
           (Array.isArray(subj.seksyen_list) ? subj.seksyen_list : []).map(section => ({
@@ -51,6 +45,7 @@ onMounted(async () => {
             bilPelajar: section.bil_pelajar,
             bilSeksyen: subj.bil_seksyen ?? (subj.seksyen_list?.length ?? 0),
             bilPensyarah: subj.bil_pensyarah ?? new Set((subj.seksyen_list ?? []).map(s => s.pensyarah)).size,
+            kurikulum: subj.kurikulum || "2025"
           }))
         );
       } else {
@@ -58,19 +53,30 @@ onMounted(async () => {
       }
     }
   } catch (err) {
-    error.value = "Gagal mendapatkan data subjek.";
+    error.value = "Failed to retrieve subject data.";
     console.error("[ERROR] Failed to fetch subject data:", err);
   }
 });
 
-// Pagination
+const filteredRows = computed(() => {
+  return subjectRows.value.filter(row => {
+    const matchSearch =
+      row.code.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      row.name.toLowerCase().includes(searchQuery.value.toLowerCase());
+    const matchKurikulum =
+      selectedKurikulum.value === "Semua" ||
+      row.kurikulum?.includes(selectedKurikulum.value);
+    return matchSearch && matchKurikulum;
+  });
+});
+
 const paginatedRows = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
-  return subjectRows.value.slice(start, start + itemsPerPage);
+  return filteredRows.value.slice(start, start + itemsPerPage);
 });
 
 const pageCount = computed(() => {
-  return Math.ceil(subjectRows.value.length / itemsPerPage) || 1;
+  return Math.ceil(filteredRows.value.length / itemsPerPage) || 1;
 });
 
 function gotoPage(page) {
@@ -78,100 +84,101 @@ function gotoPage(page) {
   if (page > pageCount.value) page = pageCount.value;
   currentPage.value = page;
 }
+
+watch([searchQuery, selectedKurikulum], () => {
+  currentPage.value = 1;
+});
 </script>
 
 <template>
   <div class="bg-gray-100 min-h-screen pt-20">
-    <Toggle titleBanner="Subjek"/>
+    <Toggle titleBanner="Subject" />
 
-    <main>
-
-      <!-- Filters (keep simple for now) -->
-      <div class="flex flex-wrap items-center gap-3 px-4 py-2">
+    <!-- FILTERS & PAGINATION -->
+    <div class="flex flex-col md:flex-row justify-between items-center gap-3 px-4 py-4 max-w-6xl mx-auto">
+      <div class="flex flex-wrap items-center gap-3">
         <div>
-          Kurikulum:
+          Curriculum:
           <select v-model="selectedKurikulum" class="ml-1 px-2 py-1 border rounded">
-            <option value="Semua">Semua</option>
+            <option value="Semua">All</option>
+            <option value="2025">2025</option>
             <option value="2024">2024</option>
             <option value="2023">2023</option>
           </select>
         </div>
-        <div>
-          Kod/Nama Subjek:
-          <select v-model="selectedSubject" class="ml-1 px-2 py-1 border rounded">
-            <option value="Semua">Semua</option>
-            <!-- You can auto-fill options if you want -->
-          </select>
-        </div>
-        <!-- You may add a search box here if needed -->
+        <input
+          v-model="searchQuery"
+          placeholder="Search subject by code or name..."
+          class="border px-3 py-1 rounded w-64"
+        />
       </div>
 
-      <!-- Card Section -->
-      <div class="flex flex-col gap-4 px-4 py-2">
-        <div
-          v-for="(subject, index) in paginatedRows"
-          :key="(currentPage-1)*itemsPerPage+index"
-          class="bg-blue-100 rounded-xl shadow p-4 relative transition"
-        >
-          <!-- Top Right Action Button -->
-          <button
-            class="absolute top-3 right-3 rounded bg-gray-200 hover:bg-gray-300 p-2"
-            title="Maklumat Jadual"
-          >
-            <!-- Simple document icon SVG -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <rect x="6" y="3" width="12" height="18" rx="2" stroke-width="2"/>
-              <path d="M9 7h6M9 11h6M9 15h3" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </button>
-          <!-- Main Subject Info -->
-          <div class="font-semibold text-lg">{{ subject.code }}</div>
-          <div class="text-xl font-normal mb-1">{{ subject.name }}</div>
-          <div class="flex justify-between text-gray-700 mb-2 text-sm">
-            <div>{{ subject.shortCode }}</div>
-            <div>kredit: {{ subject.kredit }}</div>
-          </div>
-          <div class="flex gap-4 text-gray-700 text-[15px]">
-            <div>Bil. Seksyen: {{ subject.seksyen ?? '-' }}</div>
-            <div>Bil. Pensyarah: {{ subject.drPensyarah ?? '-' }}</div>
-            <div>Bil. Pelajar: {{ subject.bilPelajar ?? '-' }}</div>
-          </div>
-        </div>
-        <div v-if="!paginatedRows.length && !error" class="text-center text-gray-500 py-8">
-          Tiada data subjek untuk dipaparkan.
-        </div>
-        <div v-if="error" class="text-red-600 text-center py-2">
-          {{ error }}
-        </div>
-      </div>
-
-      <!-- Pagination Dropdown -->
-      <div class="text-sm flex justify-center py-4 items-center gap-2">
+      <div class="flex items-center gap-2 text-sm">
         <button @click="gotoPage(1)" :disabled="currentPage === 1">&lt;&lt;</button>
         <button @click="gotoPage(currentPage - 1)" :disabled="currentPage === 1">&lt;</button>
-          <span>
-            Page
-            <select
-              v-model="currentPage"
-              @change="gotoPage(Number(currentPage))"
-              class="mx-1 px-2 py-1 border rounded"
-            >
-              <option v-for="page in pageCount" :key="page" :value="page">
-                {{ page }}
-              </option>
-            </select>
-            of {{ pageCount }}
-          </span>
+        <span>
+          Page
+          <select
+            v-model="currentPage"
+            @change="gotoPage(Number(currentPage))"
+            class="mx-1 px-2 py-1 border rounded"
+          >
+            <option v-for="page in pageCount" :key="page" :value="page">
+              {{ page }}
+            </option>
+          </select>
+          of {{ pageCount }}
+        </span>
         <button @click="gotoPage(currentPage + 1)" :disabled="currentPage === pageCount">&gt;</button>
         <button @click="gotoPage(pageCount)" :disabled="currentPage === pageCount">&gt;&gt;</button>
       </div>
-    </main>
+    </div>
 
-    <!-- Footer -->
-    <p class="text-xs text-center px-4 pb-6">
-      Jika anda mempunyai sebarang komen atau pertanyaan mengenai halaman web ini sila hubungi
-      webmaster di <a href="mailto:ttms@fc.utm.my" class="text-blue-600">ttms@fc.utm.my</a><br />
-      Hakcipta Terpelihara © 2002-2025, Fakulti Komputeran, UTM
+    <!-- SUBJECT CARD SECTION -->
+    <div class="grid gap-4 px-4 py-2 max-w-6xl mx-auto grid-cols-1 md:grid-cols-2">
+      <div
+        v-for="(subject, index) in paginatedRows"
+        :key="(currentPage - 1) * itemsPerPage + index"
+        class="bg-white border border-gray-200 hover:shadow-lg rounded-xl p-4 transition space-y-2 relative"
+      >
+        <button
+          class="absolute top-3 right-3 rounded bg-gray-200 hover:bg-gray-300 p-2"
+          title="View Schedule Info"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <rect x="6" y="3" width="12" height="18" rx="2" stroke-width="2" />
+            <path d="M9 7h6M9 11h6M9 15h3" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+
+        <div class="text-blue-700 font-bold text-lg">{{ subject.code }}</div>
+        <div class="text-gray-800 text-base font-medium">{{ subject.name }}</div>
+
+        <div class="flex justify-between text-sm text-gray-600">
+          <span>{{ subject.shortCode }}</span>
+          <span>Kredit: {{ subject.kredit }}</span>
+        </div>
+
+        <div class="flex flex-wrap gap-3 pt-2 text-sm text-gray-700">
+          <span class="bg-gray-100 px-2 py-0.5 rounded">Section: {{ subject.seksyen ?? '-' }}</span>
+          <span class="bg-gray-100 px-2 py-0.5 rounded">Lecturer: {{ subject.drPensyarah ?? '-' }}</span>
+          <span class="bg-gray-100 px-2 py-0.5 rounded">Students: {{ subject.bilPelajar ?? '-' }}</span>
+        </div>
+      </div>
+
+      <div v-if="!paginatedRows.length && !error" class="text-center text-gray-400 italic py-10">
+        No subjects to display.
+      </div>
+      <div v-if="error" class="text-red-600 text-center py-4">
+        {{ error }}
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <p class="text-xs text-center px-4 pb-6 text-gray-600">
+      If you have any comments or questions regarding this page, please contact
+      <a href="mailto:ttms@fc.utm.my" class="text-blue-600">ttms@fc.utm.my</a>.<br />
+      Copyright &copy; 2002–2025, Faculty of Computing, UTM. All rights reserved.
     </p>
   </div>
 </template>
