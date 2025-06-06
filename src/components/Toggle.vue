@@ -1,9 +1,17 @@
 <template>
   <!-- Header -->
-  <header class="header fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-3 bg-gradient-to-r from-[#5a2a2a] via-[#933b3b] to-[#ba5757] text-white shadow-md">
+  <header
+    class="header fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-3 bg-gradient-to-r from-[#5a2a2a] via-[#933b3b] to-[#ba5757] text-white shadow-md"
+  >
     <div class="flex items-center space-x-4">
-      <button @click="toggleSidebar" class="toggle-btn hover:scale-105 transition">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <button @click="toggleSidebar" class="toggle-btn">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
@@ -17,27 +25,41 @@
   <!-- Sidebar -->
   <div :class="['sidebar', { 'sidebar-closed': !sidebarOpen }]">
     <div class="sidebar-header">
-      <h2>Navigation</h2>
-      <button @click="toggleSidebar" class="close-btn">×</button>
+      <h2 class="text-lg font-bold">Menu</h2>
+      <button @click="toggleSidebar" class="close-btn">&times;</button>
     </div>
     <nav class="nav-links">
-      <a href="#" @click.prevent="loadMain"><AppIcon name="home" /> Home</a>
-      <a href="#" @click.prevent="loadTimetable"><AppIcon name="timetable" /> Timetable</a>
-      <a href="#" @click.prevent="loadRuang"><AppIcon name="ruang" /> Venue</a>
-      <a href="#" @click.prevent="loadSubjek"><AppIcon name="subjek" /> Subject</a>
-      <a href="#" @click.prevent="loadPensyarah"><AppIcon name="lecturer" /> Lecturer</a>
-      <a href="#" @click.prevent="loadPelajar"><AppIcon name="student" /> Student</a>
-      <a href="#" @click.prevent="loadKurikulum"><AppIcon name="curriculum" /> Curriculum</a>
-      <a href="#" @click="logout"><AppIcon name="logout" /> Logout</a>
+      <a :class="{ active: isActive('/Home') }" href="#" @click.prevent="navigate('/Home')">
+        <AppIcon name="home" /> Home
+      </a>
+      <a :class="{ active: isActive('/Timetable') }" href="#" @click.prevent="navigate('/Timetable')">
+        <AppIcon name="timetable" /> Timetable
+      </a>
+      <a :class="{ active: isActive('/Venue') }" href="#" @click.prevent="navigate('/Venue')">
+        <AppIcon name="venue" /> Venue
+      </a>
+      <a :class="{ active: isActive('/Subject') }" href="#" @click.prevent="navigate('/Subject')">
+        <AppIcon name="subjek" /> Subject
+      </a>
+      <a :class="{ active: isActive('/Lecturer') }" href="#" @click.prevent="navigate('/Lecturer')">
+        <AppIcon name="lecturer" /> Lecturer
+      </a>
+      <a :class="{ active: isActive('/Student') }" href="#" @click.prevent="navigate('/Student')">
+        <AppIcon name="student" /> Student
+      </a>
+      <a :class="{ active: isActive('/Curriculum') }" href="#" @click.prevent="navigate('/Curriculum')">
+        <AppIcon name="curriculum" /> Curriculum
+      </a>
+      <a href="#" @click="logout">
+        <AppIcon name="logout" /> Logout
+      </a>
     </nav>
   </div>
 
-  <!-- Error Message -->
   <div v-if="error" class="error-message">
     {{ error }}
   </div>
 
-  <!-- Page Content -->
   <slot />
 </template>
 
@@ -54,6 +76,7 @@ if (lsData) {
 
 const sidebarOpen = ref(false);
 const error = ref(null);
+
 const props = defineProps({
   titleBanner: {
     type: String,
@@ -65,34 +88,15 @@ const toggleSidebar = () => {
   sidebarOpen.value = !sidebarOpen.value;
 };
 
-const loadMain = () => {
+const navigate = (url) => {
   toggleSidebar();
-  window.location.href = "/main";
+  window.location.href = url;
 };
-const loadTimetable = () => {
-  toggleSidebar();
-  window.location.href = "/timetable";
+
+const isActive = (path) => {
+  return window.location.pathname === path;
 };
-const loadRuang = () => {
-  toggleSidebar();
-  window.location.href = "/ruang";
-};
-const loadSubjek = () => {
-  toggleSidebar();
-  window.location.href = "/subjek";
-};
-const loadPensyarah = () => {
-  toggleSidebar();
-  window.location.href = "/pensyarah";
-};
-const loadPelajar = () => {
-  toggleSidebar();
-  window.location.href = "/pelajar";
-};
-const loadKurikulum = () => {
-  toggleSidebar();
-  window.location.href = "/kurikulum";
-};
+
 const logout = () => {
   localStorage.removeItem("web.fc.utm.my_usersession");
   window.location.replace("/login");
@@ -109,6 +113,10 @@ const logout = () => {
   padding: 6px;
   border: none;
   border-radius: 6px;
+  transition: transform 0.2s;
+}
+.toggle-btn:hover {
+  transform: scale(1.15);
 }
 .sidebar {
   position: fixed;
@@ -116,50 +124,62 @@ const logout = () => {
   left: 0;
   height: 100%;
   width: 260px;
-  background-color: #933b3b;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+  background: #933b3b;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
   z-index: 50;
   overflow-y: auto;
-  transition: transform 0.3s ease;
+  transition: transform 0.4s ease;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 .sidebar-closed {
   transform: translateX(-100%);
 }
 .sidebar-header {
-  background-color: white;
+  background-color: rgba(255, 255, 255, 0.9);
   color: #933b3b;
-  padding: 15px 20px;
+  padding: 16px 20px;
   font-weight: bold;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 1px solid #e0e0e0;
 }
 .close-btn {
   background: none;
   border: none;
   color: #933b3b;
-  font-size: 20px;
+  font-size: 22px;
   cursor: pointer;
+  transition: transform 0.3s ease;
+}
+.close-btn:hover {
+  transform: rotate(90deg);
 }
 .nav-links {
   display: flex;
   flex-direction: column;
-  padding: 15px 20px;
+  padding: 20px;
 }
 .nav-links a {
   color: white;
   text-decoration: none;
-  padding: 12px;
-  margin-bottom: 6px;
-  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-weight: 500;
-  transition: all 0.2s;
+  gap: 14px;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.25s ease;
 }
 .nav-links a:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateX(5px);
+}
+.nav-links a.active {
   background-color: rgba(255, 255, 255, 0.2);
+  font-weight: 700;
   transform: scale(1.03);
 }
 .error-message {
@@ -168,5 +188,7 @@ const logout = () => {
   padding: 10px;
   margin: 15px;
   border-radius: 6px;
+  font-weight: 500;
+  font-size: 14px;
 }
 </style>

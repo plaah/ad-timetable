@@ -1,116 +1,91 @@
 import { createRouter, createWebHistory } from "vue-router";
 import Login from "@/views/Login.vue";
-import Main from "@/views/Main.vue";
+import Home from "@/views/Home.vue";
 import Timetable from "@/views/Timetable.vue";
-import Ruang from "@/views/Ruang.vue";
-import Subjek from "@/views/Subjek.vue";
-import Pensyarah from "@/views/Pensyarah.vue";
-import Pelajar from "@/views/Pelajar.vue";
-import Kurikulum from "@/views/Kurikulum.vue";
-import Masaruang from "@/views/Masaruang.vue";
-import AnalysisSubjek from "@/views/AnalysisSubjek.vue";
-import AnalysisPelajar from "@/views/AnalysisPelajar.vue";
-import ClashRuang from "@/views/ClashRuang.vue";
-import ClashPelajar from "@/views/ClashPelajar.vue";
-import ClashPensyarah from "@/views/ClashPensyarah.vue";
+import Room from "@/views/Venue.vue";
+import Subject from "@/views/Subject.vue";
+import Lecturer from "@/views/Lecturer.vue";
+import Student from "@/views/Student.vue";
+import Curriculum from "@/views/Curriculum.vue";
 
 const routes = [
-    { path: "/", redirect: "/login" },
-    { path: "/login", name: "Login", component: Login },
-    {
-        path: "/main",
-        name: "Main",
-        component: Main,
-        meta: { requiresAuth: true },
-    },
-    {
-        path: "/timetable",
-        name: "Timetable",
-        component: Timetable,
-        meta: { requiresAuth: true },
-    },
-    {
-        path: "/ruang",
-        name: "Ruang",
-        component: Ruang,
-        meta: { requiresAuth: true },
-    },
-    {
-        path: "/subjek",
-        name: "Subjek",
-        component: Subjek,
-        meta: { requiresAuth: true },
-    },
-    {
-        path: "/pensyarah",
-        name: "Pensyarah",
-        component: Pensyarah,
-        meta: { requiresAuth: true },
-    },
-    {
-        path: "/pelajar",
-        name: "Pelajar",
-        component: Pelajar,
-        meta: { requiresAuth: true },
-    },
-    {
-        path: "/kurikulum",
-        name: "Kurikulum",
-        component: Kurikulum,
-        meta: { requiresAuth: true },
-    },
-    {
-        path: "/masaruang",
-        name: "Masaruang",
-        component: Masaruang,
-        meta: { requiresAuth: true },
-    },
-    {
-        path: "/analysissubjek",
-        name: "AnalysiSubjek",
-        component: AnalysisSubjek,
-        meta: { requiresAuth: true },
-    },
-    {
-        path: "/analysispelajar",
-        name: "AnalysiPelajar",
-        component: AnalysisPelajar,
-        meta: { requiresAuth: true },
-    },
-    {
-        path: "/clashruang",
-        name: "ClashRuang",
-        component: ClashRuang,
-        meta: { requiresAuth: true },
-    },
-    {
-        path: "/clashpelajar",
-        name: "ClashPelajar",
-        component: ClashPelajar,
-        meta: { requiresAuth: true },
-    },
-    {
-        path: "/clashpensyarah",
-        name: "ClashPensyarah",
-        component: ClashPensyarah,
-        meta: { requiresAuth: true },
-    },
+  // Saat akses '/', redirect ke /login
+  { path: "/", redirect: "/login" },
+
+  // Halaman Login (tidak butuh auth)
+  {
+    path: "/login",
+    name: "Login",
+    component: Login,
+    meta: { requiresAuth: false },
+  },
+
+  // Halaman yang butuh login
+  {
+    path: "/home",
+    name: "Home",
+    component: Home,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/timetable",
+    name: "Timetable",
+    component: Timetable,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/venue",
+    name: "Venue",
+    component: Room,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/subject",
+    name: "Subject",
+    component: Subject,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/lecturer",
+    name: "Lecturer",
+    component: Lecturer,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/student",
+    name: "Student",
+    component: Student,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/curriculum",
+    name: "Curriculum",
+    component: Curriculum,
+    meta: { requiresAuth: true },
+  },
 ];
 
 const router = createRouter({
-    history: createWebHistory(),
-    routes,
+  history: createWebHistory(),
+  routes,
 });
 
+// Navigation guard: cek apakah user sudah login
 router.beforeEach((to, from, next) => {
-    const session = localStorage.getItem("web.fc.utm.my_usersession");
-    if (to.meta.requiresAuth && !session) {
-        return next("/login");
-    }
-    if (to.path === "/login" && session) {
-        return next("/main");
-    }
-    next();
+  const session = localStorage.getItem("web.fc.utm.my_usersession");
+
+  // Jika halaman butuh login dan belum login, redirect ke /login
+  if (to.meta.requiresAuth && !session) {
+    return next("/login");
+  }
+
+  // Jika user sudah login dan mencoba akses /login, redirect ke /home
+  if (to.path === "/login" && session) {
+    return next("/home");
+  }
+
+  // Jika semua aman, lanjutkan ke halaman yang diminta
+  next();
 });
 
 export default router;

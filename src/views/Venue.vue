@@ -56,7 +56,7 @@ const setPage = (page) => {
 
 <template>
   <div class="bg-gray-100 min-h-screen pt-20">
-    <Toggle titleBanner="Ruang" />
+    <Toggle titleBanner="Venue" />
 
     <!-- Filter + Pagination -->
     <div class="flex flex-col md:flex-row justify-between items-center gap-3 px-4 py-4 max-w-6xl mx-auto">

@@ -1,13 +1,13 @@
 import TimetableRow from "./TimetableRow";
 
 export const days = [
-    "Ahad",
-    "Isnin",
-    "Selasa",
-    "Rabu",
-    "Khamis",
-    "Jumaat",
-    "Sabtu",
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
 ];
 
 export const timetable = [
@@ -21,10 +21,5 @@ export const timetable = [
     new TimetableRow(8, "14:00 - 14:50"),
     new TimetableRow(9, "15:00 - 15:50"),
     new TimetableRow(10, "16:00 - 16:50"),
-    new TimetableRow(11, "17:00 - 17:50"),
-    new TimetableRow(12, "18:00 - 18:50"),
-    new TimetableRow(13, "19:00 - 19:50"),
-    new TimetableRow(14, "20:00 - 20:50"),
-    new TimetableRow(15, "21:00 - 21:50"),
-    new TimetableRow(16, "22:00 - 22:50"),
+    
 ];
