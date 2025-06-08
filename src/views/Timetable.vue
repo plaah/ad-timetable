@@ -236,7 +236,28 @@ watch(filteredSubjects, async (newSubs) => {
 
 const exportWeekToPDF = () => {
   const element = document.getElementById("week-pdf");
-  if (!element) return;
+  if (!element) {
+    console.error("Element with ID 'week-pdf' not found.");
+    alert("Failed to find the element to export. Please try again.");
+    return;
+  }
+
+  if (!userMatric || !userMatric.value) {
+    console.error("userMatric or userMatric.value is not defined.");
+    alert("Failed to generate PDF. User matriculation number is missing.");
+    return;
+  }
+
+  // Tampilkan loading indicator
+  const loadingIndicator = document.createElement("div");
+  loadingIndicator.style.position = "fixed";
+  loadingIndicator.style.top = "50%";
+  loadingIndicator.style.left = "50%";
+  loadingIndicator.style.transform = "translate(-50%, -50%)";
+  loadingIndicator.style.zIndex = "1000";
+  loadingIndicator.innerHTML = "Generating PDF... Please wait.";
+  document.body.appendChild(loadingIndicator);
+
   const opt = {
     margin: 0.5,
     filename: `Weekly_Timetable_${userMatric.value}.pdf`,
@@ -244,7 +265,21 @@ const exportWeekToPDF = () => {
     html2canvas: { scale: 2, useCORS: true },
     jsPDF: { unit: "in", format: "a4", orientation: "landscape" },
   };
-  html2pdf().set(opt).from(element).save().catch(err => console.error("PDF export failed", err));
+
+  html2pdf()
+    .set(opt)
+    .from(element)
+    .save()
+    .then(() => {
+      // Hapus loading indicator setelah selesai
+      document.body.removeChild(loadingIndicator);
+    })
+    .catch(err => {
+      console.error("PDF export failed", err);
+      alert("Failed to export the timetable to PDF. Please try again.");
+      // Hapus loading indicator jika terjadi error
+      document.body.removeChild(loadingIndicator);
+    });
 };
 </script>
 
@@ -264,4 +299,45 @@ const exportWeekToPDF = () => {
 button:active {
   transform: scale(0.95);
 }
+
+@media (max-width: 768px) {
+  .responsive-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .responsive-table thead {
+    display: none;
+  }
+
+  .responsive-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .responsive-table tbody tr {
+    display: block;
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  .responsive-table tbody td {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 0.5rem;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .responsive-table tbody td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    display: inline-block;
+    width: 45%;
+    text-align: right;
+    margin-right: 0.5rem;
+  }
+}
 </style>
+
