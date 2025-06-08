@@ -15,7 +15,7 @@
     </div>
 
     <!-- Tab Switcher -->
-    <div class="px-6 mt-6 flex gap-2">
+    <div class="px-6 mt-6 flex flex-col sm:flex-row gap-2">
       <button
         @click="switchView('daily')"
         :class="viewMode === 'daily' ? 'bg-[#933b3b] text-white scale-105' : 'bg-white text-gray-600 border'"
@@ -36,14 +36,29 @@
     <div v-show="viewMode === 'daily'">
       <div class="px-6 py-4 bg-white shadow rounded-xl mx-4 mt-6">
         <div class="flex justify-end">
-          <select v-model="activeSession" class="rounded-lg border px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#933b3b]">
+          <select
+            v-model="activeSession"
+            class="rounded-lg border px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#933b3b] w-full sm:w-auto"
+          >
             <option v-for="session in sessionOptions" :key="session" :value="session">{{ session }}</option>
           </select>
         </div>
-        <div class="flex justify-between mt-6 text-sm font-medium">
-          <div v-for="(day, i) in days" :key="i" @click="selectedDay = i"
-            class="px-3 py-2 rounded-lg cursor-pointer transition-all"
-            :class="selectedDay === i ? 'bg-[#933b3b] text-white shadow-md' : 'hover:bg-gray-200 text-gray-700'">
+
+        <!-- Tabs Hari dengan scroll snap -->
+        <div
+          class="flex overflow-x-auto snap-x snap-mandatory mt-6 text-sm font-medium gap-2"
+          style="width: 100%;"
+        >
+          <div
+            v-for="(day, i) in days"
+            :key="i"
+            @click="selectedDay = i"
+            class="px-3 py-2 rounded-lg cursor-pointer transition-all text-center snap-center min-w-[80px]"
+            :class="selectedDay === i
+              ? 'bg-[#933b3b] text-white shadow-md'
+              : 'hover:bg-gray-200 text-gray-700'"
+            style="flex: 1;"
+          >
             {{ day }}
           </div>
         </div>
@@ -55,20 +70,24 @@
 
       <div v-else class="px-6 py-6">
         <TransitionGroup name="fade" tag="div">
-          <div v-for="(item, i) in daySchedule" :key="item.time + i"
-            class="flex items-start border-l-4 p-5 rounded-xl shadow-md mb-4 backdrop-blur-sm"
-            :class="item.color">
-            <div class="text-xs text-gray-600 min-w-[60px] text-center">
+          <div
+            v-for="(item, i) in daySchedule"
+            :key="item.time + i"
+            class="flex flex-col sm:flex-row items-start border-l-4 p-5 rounded-xl shadow-md mb-4 backdrop-blur-sm"
+            :class="item.color"
+          >
+            <div class="text-xs text-gray-600 sm:min-w-[60px] text-center sm:text-left">
               <div class="font-bold">{{ item.time.split('-')[0] }}</div>
               <div class="text-gray-400">{{ item.time.split('-')[1] }}</div>
             </div>
-            <div class="ml-6">
+            <div class="sm:ml-6 mt-2 sm:mt-0">
               <div class="font-semibold text-gray-800 text-base flex items-center gap-2">
                 🎓 <span>{{ item.subject }}</span>
               </div>
               <div class="text-sm text-gray-600 italic">📘 {{ item.subjectName }}</div>
               <div class="text-sm text-gray-500 mt-1">
-                Section: {{ item.section }} <span v-if="item.room">| 📍 Room: {{ item.room }}</span>
+                Section: {{ item.section }}
+                <span v-if="item.room">| 📍 Room: {{ item.room }}</span>
               </div>
             </div>
           </div>
@@ -82,37 +101,33 @@
 
     <!-- WEEKLY VIEW -->
     <div v-show="viewMode === 'weekly'">
-      <div class="flex justify-end px-6 mt-6">
-        <button @click="exportWeekToPDF"
-          class="bg-[#933b3b] text-white px-4 py-2 rounded-lg text-sm shadow hover:bg-[#7c3232] transition">
-          🧾 Export Full Week to PDF
-        </button>
-      </div>
-      <div id="week-pdf" class="overflow-auto mt-4 px-6">
-        <table class="min-w-full border border-gray-300 rounded-xl text-sm text-left bg-white shadow">
-          <thead class="bg-[#933b3b] text-white">
-            <tr>
-              <th class="p-3 border-r border-white">Time</th>
-              <th v-for="day in days" :key="day" class="p-3 border-r border-white">{{ day }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="(row, timeIdx) in timetableData.filter(r => parseInt(r.waktu.split('-')[0]) < 17)"
-              :key="row.waktu"
-              class="border-t border-gray-300"
-            >
-              <td class="p-3 font-semibold text-gray-700">{{ row.waktu }}</td>
-              <td v-for="(slot, i) in row.slots" :key="i" class="p-3 align-top">
-                <div v-if="slot">
-                  <div class="font-bold">{{ slot.split('\\n')[0] }}</div>
-                  <div class="text-xs text-gray-600">{{ slot.split('\\n')[1] }}</div>
-                  <div class="text-xs text-gray-500">{{ slot.split('\\n')[2] }}</div>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="overflow-x-auto mt-4 px-4">
+        <div id="week-pdf" class="bg-white p-4 rounded-xl shadow min-w-[700px] sm:min-w-full">
+          <table class="w-full table-fixed border border-gray-300 rounded-xl text-sm text-left bg-white shadow">
+            <thead class="bg-[#933b3b] text-white">
+              <tr>
+                <th class="p-3 border-r border-white">Time</th>
+                <th v-for="day in days" :key="day" class="p-3 border-r border-white">{{ day }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="(row, timeIdx) in timetableData.filter(r => parseInt(r.waktu.split('-')[0]) < 17)"
+                :key="row.waktu"
+                class="border-t border-gray-300"
+              >
+                <td class="p-3 font-semibold text-gray-700">{{ row.waktu }}</td>
+                <td v-for="(slot, i) in row.slots" :key="i" class="p-3 align-top">
+                  <div v-if="slot">
+                    <div class="font-bold">{{ slot.split('\\n')[0] }}</div>
+                    <div class="text-xs text-gray-600">{{ slot.split('\\n')[1] }}</div>
+                    <div class="text-xs text-gray-500">{{ slot.split('\\n')[2] }}</div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -123,7 +138,6 @@ import PelajarSubjekApi from "@/api/PelajarSubjekApi";
 import JadualSubjekApi from "@/api/JadualSubjekApi";
 import Toggle from "@/components/Toggle.vue";
 import { ref, computed, onMounted, watch } from "vue";
-import html2pdf from "html2pdf.js";
 import { userMatric, userName } from "@/constants/ApiConstants";
 import { timetable, days } from "@/constants/TimetableConstants";
 
@@ -138,7 +152,6 @@ const subjectList = ref([]);
 const timetableData = ref(JSON.parse(JSON.stringify(timetable)));
 const isLoading = ref(true);
 
-// Load user
 const lsData = JSON.parse(localStorage.getItem("web.fc.utm.my_usersession"));
 if (lsData) {
   userName.value = lsData.full_name;
@@ -233,111 +246,4 @@ watch(filteredSubjects, async (newSubs) => {
     isLoading.value = false;
   }
 });
-
-const exportWeekToPDF = () => {
-  const element = document.getElementById("week-pdf");
-  if (!element) {
-    console.error("Element with ID 'week-pdf' not found.");
-    alert("Failed to find the element to export. Please try again.");
-    return;
-  }
-
-  if (!userMatric || !userMatric.value) {
-    console.error("userMatric or userMatric.value is not defined.");
-    alert("Failed to generate PDF. User matriculation number is missing.");
-    return;
-  }
-
-  // Tampilkan loading indicator
-  const loadingIndicator = document.createElement("div");
-  loadingIndicator.style.position = "fixed";
-  loadingIndicator.style.top = "50%";
-  loadingIndicator.style.left = "50%";
-  loadingIndicator.style.transform = "translate(-50%, -50%)";
-  loadingIndicator.style.zIndex = "1000";
-  loadingIndicator.innerHTML = "Generating PDF... Please wait.";
-  document.body.appendChild(loadingIndicator);
-
-  const opt = {
-    margin: 0.5,
-    filename: `Weekly_Timetable_${userMatric.value}.pdf`,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: "in", format: "a4", orientation: "landscape" },
-  };
-
-  html2pdf()
-    .set(opt)
-    .from(element)
-    .save()
-    .then(() => {
-      // Hapus loading indicator setelah selesai
-      document.body.removeChild(loadingIndicator);
-    })
-    .catch(err => {
-      console.error("PDF export failed", err);
-      alert("Failed to export the timetable to PDF. Please try again.");
-      // Hapus loading indicator jika terjadi error
-      document.body.removeChild(loadingIndicator);
-    });
-};
 </script>
-
-<style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: all 0.3s ease;
-}
-.fade-enter-from {
-  opacity: 0;
-  transform: translateY(10px);
-}
-.fade-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-}
-button:active {
-  transform: scale(0.95);
-}
-
-@media (max-width: 768px) {
-  .responsive-table {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-  }
-
-  .responsive-table thead {
-    display: none;
-  }
-
-  .responsive-table tbody {
-    display: block;
-    width: 100%;
-  }
-
-  .responsive-table tbody tr {
-    display: block;
-    width: 100%;
-    margin-bottom: 1rem;
-  }
-
-  .responsive-table tbody td {
-    display: block;
-    width: 100%;
-    text-align: center;
-    padding: 0.5rem;
-    border-bottom: 1px solid #ddd;
-  }
-
-  .responsive-table tbody td::before {
-    content: attr(data-label);
-    font-weight: bold;
-    display: inline-block;
-    width: 45%;
-    text-align: right;
-    margin-right: 0.5rem;
-  }
-}
-</style>
-
