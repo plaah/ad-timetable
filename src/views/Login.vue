@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onBeforeMount } from "vue";
 import { useRouter } from "vue-router";
-import AuthApi from "@/api/AuthApi";
+import Authentication from "@/api/Authentication";
 
 const login = ref("");
 const password = ref("");
@@ -11,7 +11,7 @@ const errorMessage = ref("");
 const isReady = ref(false);
 
 const router = useRouter();
-const authApi = new AuthApi();
+const authentication = new Authentication();
 
 // Cek apakah user sudah login sebelum menampilkan halaman login
 onBeforeMount(() => {
@@ -27,7 +27,7 @@ const handleLogin = async () => {
   errorMessage.value = "";
   try {
     isLoading.value = true;
-    const data = await authApi.login(login.value, password.value);
+    const data = await authentication.login(login.value, password.value);
 
     if (data?.[0]?.session_id) {
       localStorage.setItem("web.fc.utm.my_usersession", JSON.stringify(data[0]));

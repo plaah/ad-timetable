@@ -134,8 +134,8 @@
 </template>
 
 <script setup>
-import PelajarSubjekApi from "@/api/PelajarSubjekApi";
-import JadualSubjekApi from "@/api/JadualSubjekApi";
+import StudentSubjectApi from "@/api/StudentSubjectApi";
+import TimetableApi from "@/api/TimetableApi";
 import Toggle from "@/components/Toggle.vue";
 import { ref, computed, onMounted, watch } from "vue";
 import { userMatric, userName } from "@/constants/ApiConstants";
@@ -165,13 +165,13 @@ const greeting = computed(() => {
   return "Good evening";
 });
 
-const pelajarSubjekApi = new PelajarSubjekApi();
-const jadualSubjekApi = new JadualSubjekApi();
+const studentSubjectApi = new StudentSubjectApi();
+const timetableApi = new TimetableApi();
 
 onMounted(async () => {
   isLoading.value = true;
   try {
-    subjectList.value = await pelajarSubjekApi.getTimetableInfo(userMatric.value);
+    subjectList.value = await studentSubjectApi.getTimetableInfo(userMatric.value);
   } catch (err) {
     console.error("Error loading subject list", err);
   } finally {
@@ -225,7 +225,7 @@ watch(filteredSubjects, async (newSubs) => {
   timetableData.value = JSON.parse(JSON.stringify(timetable));
   try {
     const schedules = (await Promise.all(newSubs.map(s =>
-      jadualSubjekApi.getSubjectSchedule({
+      timetableApi.getSubjectSchedule({
         kod_subjek: s.kod_subjek,
         seksyen: s.seksyen,
         sesi: s.sesi,

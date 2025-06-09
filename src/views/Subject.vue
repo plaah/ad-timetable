@@ -2,7 +2,7 @@
 import { ref, onMounted, computed, watch } from "vue";
 import Toggle from "@/components/Toggle.vue";
 import SemesterApi from "@/api/SemesterApi";
-import SubjekApi from "@/api/SubjekApi";
+import SubjectApi from "@/api/SubjectApi";
 import { userInfo, userName, userMatric } from "@/constants/ApiConstants.js";
 
 const lsData = JSON.parse(localStorage.getItem("web.fc.utm.my_usersession"));
@@ -17,7 +17,7 @@ const searchQuery = ref("");
 const subjectRows = ref([]);
 const error = ref(null);
 const semesterApi = new SemesterApi();
-const subjekApi = new SubjekApi();
+const subjectApi = new SubjectApi();
 const currentSession = ref("");
 const currentSemester = ref("");
 
@@ -31,7 +31,7 @@ onMounted(async () => {
       currentSession.value = sessionData[0].sesi;
       currentSemester.value = sessionData[0].semester;
 
-      const subjectData = await subjekApi.getSubjectSections(currentSession.value, currentSemester.value);
+      const subjectData = await subjectApi.getSubjectSections(currentSession.value, currentSemester.value);
 
       if (Array.isArray(subjectData)) {
         subjectRows.value = subjectData.flatMap(subj =>
