@@ -35,6 +35,7 @@
     <!-- DAILY VIEW -->
     <div v-show="viewMode === 'daily'">
       <div class="px-6 py-4 bg-white shadow rounded-xl mx-4 mt-6">
+        <!-- Session Filter -->
         <div class="flex justify-end">
           <select
             v-model="activeSession"
@@ -44,57 +45,52 @@
           </select>
         </div>
 
-        <!-- Tabs Hari dengan scroll snap -->
-        <div
-          class="flex overflow-x-auto snap-x snap-mandatory mt-6 text-sm font-medium gap-2"
-          style="width: 100%;"
-        >
+        <!-- Day Tabs: full width with justified spacing -->
+        <div class="grid grid-cols-7 gap-2 mt-6 text-sm font-medium relative">
           <div
             v-for="(day, i) in days"
             :key="i"
-            @click="selectedDay = i"
-            class="px-3 py-2 rounded-lg cursor-pointer transition-all text-center snap-center min-w-[80px]"
-            :class="selectedDay === i
-              ? 'bg-[#933b3b] text-white shadow-md'
-              : 'hover:bg-gray-200 text-gray-700'"
-            style="flex: 1;"
+            class="relative text-center"
           >
-            {{ day }}
-          </div>
-        </div>
-      </div>
-
-      <div v-if="isLoading" class="text-center py-10 text-[#933b3b] font-medium animate-pulse">
-        Loading your schedule...
-      </div>
-
-      <div v-else class="px-6 py-6">
-        <TransitionGroup name="fade" tag="div">
-          <div
-            v-for="(item, i) in daySchedule"
-            :key="item.time + i"
-            class="flex flex-col sm:flex-row items-start border-l-4 p-5 rounded-xl shadow-md mb-4 backdrop-blur-sm"
-            :class="item.color"
-          >
-            <div class="text-xs text-gray-600 sm:min-w-[60px] text-center sm:text-left">
-              <div class="font-bold">{{ item.time.split('-')[0] }}</div>
-              <div class="text-gray-400">{{ item.time.split('-')[1] }}</div>
+            <!-- Day Button -->
+            <div
+              @click="selectedDay = i"
+              :class="selectedDay === i
+                ? 'bg-[#933b3b] text-white shadow-md'
+                : 'hover:bg-gray-100 text-gray-700'"
+              class="px-3 py-2 rounded-lg cursor-pointer transition-all w-full"
+            >
+              {{ day }}
             </div>
-            <div class="sm:ml-6 mt-2 sm:mt-0">
-              <div class="font-semibold text-gray-800 text-base flex items-center gap-2">
-                🎓 <span>{{ item.subject }}</span>
-              </div>
-              <div class="text-sm text-gray-600 italic">📘 {{ item.subjectName }}</div>
-              <div class="text-sm text-gray-500 mt-1">
-                Section: {{ item.section }}
-                <span v-if="item.room">| 📍 Room: {{ item.room }}</span>
-              </div>
-            </div>
-          </div>
-        </TransitionGroup>
 
-        <div v-if="daySchedule.length === 0" class="text-center text-gray-500 py-12">
-          No classes scheduled on {{ days[selectedDay] }}.
+            <!-- Animated Schedule Popup -->
+            <transition name="fade-slide">
+              <div
+  v-if="selectedDay === i"
+  class="absolute top-full left-1/2 transform -translate-x-1/2 mt-6 bg-white border rounded-xl p-4 shadow-xl w-[300px] z-10"
+>
+
+                <div v-if="daySchedule.length === 0" class="text-center text-gray-400 text-sm italic">
+                  No classes scheduled on {{ days[selectedDay] }}.
+                </div>
+                <div v-else class="space-y-3">
+                  <div
+                    v-for="(item, index) in daySchedule"
+                    :key="index"
+                    class="p-3 border-l-4 rounded-md"
+                    :class="item.color"
+                  >
+                    <div class="text-sm font-semibold text-[#933b3b]">
+                      {{ item.time }} — {{ item.subjectName }}
+                    </div>
+                    <div class="text-xs text-gray-600">📘 {{ item.subject }}</div>
+                    <div class="text-xs text-gray-500">Section: {{ item.section }}</div>
+                    <div class="text-xs text-gray-500" v-if="item.room">📍 {{ item.room }}</div>
+                  </div>
+                </div>
+              </div>
+            </transition>
+          </div>
         </div>
       </div>
     </div>
@@ -139,7 +135,7 @@ import TimetableApi from "@/api/TimetableApi";
 import Toggle from "@/components/Toggle.vue";
 import { ref, computed, onMounted, watch } from "vue";
 import { userMatric, userName } from "@/constants/ApiConstants";
-import { timetable, days } from "@/constants/TimetableConstants";
+import { timetable, days } from "@/constants/TimeTableConstants";
 
 const viewMode = ref("daily");
 const switchView = (mode) => { viewMode.value = mode; };
@@ -197,7 +193,7 @@ const daySchedule = computed(() => {
     "bg-[#ffe2e2] border-[#933b3b]",
   ];
 
-  timetableData.value.forEach((row, timeIdx) => {
+  timetableData.value.forEach((row) => {
     const slot = row.slots[selectedDay.value];
     if (slot && slot.trim()) {
       const [code, secRaw, room] = slot.split("\n");
@@ -247,3 +243,18 @@ watch(filteredSubjects, async (newSubs) => {
   }
 });
 </script>
+
+<style scoped>
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.3s ease;
+}
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+</style>

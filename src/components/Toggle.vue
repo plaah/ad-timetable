@@ -157,7 +157,7 @@ onBeforeUnmount(() => {
   padding: 6px;
   border: none;
   border-radius: 6px;
-  transition: transform 0.2s;
+  transition: width 0.5s;
 }
 .toggle-btn:hover {
   transform: scale(1.15);
@@ -183,7 +183,7 @@ onBeforeUnmount(() => {
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
   z-index: 50;
   overflow-y: auto;
-  transition: width 0.3s ease;
+  transition: width 0.5s ease;
 }
 .sidebar-collapsed {
   width: 70px;
