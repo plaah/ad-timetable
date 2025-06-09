@@ -23,38 +23,75 @@
   </header>
 
   <!-- Sidebar -->
-  <div :class="['sidebar', { 'sidebar-closed': !sidebarOpen }]">
-    <div class="sidebar-header">
-      <h2 class="text-lg font-bold">Menu</h2>
-      <button @click="toggleSidebar" class="close-btn">&times;</button>
-    </div>
-    <nav class="nav-links">
-      <a :class="{ active: isActive('/Home') }" href="#" @click.prevent="navigate('/Home')">
-        <AppIcon name="home" /> Home
-      </a>
-      <a :class="{ active: isActive('/Timetable') }" href="#" @click.prevent="navigate('/Timetable')">
-        <AppIcon name="timetable" /> Timetable
-      </a>
-      <a :class="{ active: isActive('/Venue') }" href="#" @click.prevent="navigate('/Venue')">
-        <AppIcon name="venue" /> Venue
-      </a>
-      <a :class="{ active: isActive('/Subject') }" href="#" @click.prevent="navigate('/Subject')">
-        <AppIcon name="subjek" /> Subject
-      </a>
-      <a :class="{ active: isActive('/Lecturer') }" href="#" @click.prevent="navigate('/Lecturer')">
-        <AppIcon name="lecturer" /> Lecturer
-      </a>
-      <a :class="{ active: isActive('/Student') }" href="#" @click.prevent="navigate('/Student')">
-        <AppIcon name="student" /> Student
-      </a>
-      <a :class="{ active: isActive('/Curriculum') }" href="#" @click.prevent="navigate('/Curriculum')">
-        <AppIcon name="curriculum" /> Curriculum
-      </a>
-      <a href="#" @click="logout">
-        <AppIcon name="logout" /> Logout
-      </a>
-    </nav>
+<div :class="['sidebar', { 'sidebar-closed': !sidebarOpen }]">
+  <div class="sidebar-header">
+    <h2 class="text-lg font-bold" v-if="sidebarOpen">Menu</h2>
+    <button @click="toggleSidebar" class="close-btn">&times;</button>
   </div>
+  <nav class="nav-links">
+    <div
+      class="nav-item"
+      :class="{ active: isActive('/Home') }"
+      @click.prevent="navigate('/Home')"
+    >
+      <AppIcon name="home" />
+      <span class="label" v-if="sidebarOpen">Home</span>
+    </div>
+    <div
+      class="nav-item"
+      :class="{ active: isActive('/Timetable') }"
+      @click.prevent="navigate('/Timetable')"
+    >
+      <AppIcon name="timetable" />
+      <span class="label" v-if="sidebarOpen">Timetable</span>
+    </div>
+    <div
+      class="nav-item"
+      :class="{ active: isActive('/Venue') }"
+      @click.prevent="navigate('/Venue')"
+    >
+      <AppIcon name="venue" />
+      <span class="label" v-if="sidebarOpen">Venue</span>
+    </div>
+    <div
+      class="nav-item"
+      :class="{ active: isActive('/Subject') }"
+      @click.prevent="navigate('/Subject')"
+    >
+      <AppIcon name="subjek" />
+      <span class="label" v-if="sidebarOpen">Subject</span>
+    </div>
+    <div
+      class="nav-item"
+      :class="{ active: isActive('/Lecturer') }"
+      @click.prevent="navigate('/Lecturer')"
+    >
+      <AppIcon name="lecturer" />
+      <span class="label" v-if="sidebarOpen">Lecturer</span>
+    </div>
+    <div
+      class="nav-item"
+      :class="{ active: isActive('/Student') }"
+      @click.prevent="navigate('/Student')"
+    >
+      <AppIcon name="student" />
+      <span class="label" v-if="sidebarOpen">Student</span>
+    </div>
+    <div
+      class="nav-item"
+      :class="{ active: isActive('/Curriculum') }"
+      @click.prevent="navigate('/Curriculum')"
+    >
+      <AppIcon name="curriculum" />
+      <span class="label" v-if="sidebarOpen">Curriculum</span>
+    </div>
+    <div class="nav-item" @click="logout">
+      <AppIcon name="logout" />
+      <span class="label" v-if="sidebarOpen">Logout</span>
+    </div>
+  </nav>
+</div>
+
 
   <div v-if="error" class="error-message">
     {{ error }}
@@ -107,6 +144,7 @@ const logout = () => {
 .header {
   font-family: 'Segoe UI', sans-serif;
 }
+
 .toggle-btn {
   background-color: transparent;
   color: white;
@@ -115,25 +153,34 @@ const logout = () => {
   border-radius: 6px;
   transition: transform 0.2s;
 }
+
 .toggle-btn:hover {
   transform: scale(1.15);
 }
+
 .sidebar {
   position: fixed;
   top: 0;
   left: 0;
   height: 100%;
-  width: 260px;
+  width: 60px; /* Compact by default */
   background: #933b3b;
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
   z-index: 50;
+  overflow-x: hidden;
   overflow-y: auto;
-  transition: transform 0.4s ease;
+  transition: all 0.4s ease;
   border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+.sidebar:not(.sidebar-closed) {
+  width: 260px; /* Expanded width */
+}
+
 .sidebar-closed {
   transform: translateX(-100%);
 }
+
 .sidebar-header {
   background-color: rgba(255, 255, 255, 0.9);
   color: #933b3b;
@@ -144,6 +191,7 @@ const logout = () => {
   align-items: center;
   border-bottom: 1px solid #e0e0e0;
 }
+
 .close-btn {
   background: none;
   border: none;
@@ -152,36 +200,59 @@ const logout = () => {
   cursor: pointer;
   transition: transform 0.3s ease;
 }
+
 .close-btn:hover {
   transform: rotate(90deg);
 }
+
 .nav-links {
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  padding: 20px 10px;
 }
-.nav-links a {
-  color: white;
-  text-decoration: none;
-  padding: 12px 16px;
-  margin-bottom: 10px;
-  border-radius: 10px;
+
+.nav-item {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
+  padding: 12px;
+  margin-bottom: 10px;
+  color: white;
+  border-radius: 10px;
   font-weight: 600;
   font-size: 15px;
   transition: all 0.25s ease;
+  cursor: pointer;
 }
-.nav-links a:hover {
+
+.nav-item:hover {
   background: rgba(255, 255, 255, 0.15);
   transform: translateX(5px);
 }
-.nav-links a.active {
+
+.nav-item.active {
   background-color: rgba(255, 255, 255, 0.2);
   font-weight: 700;
   transform: scale(1.03);
 }
+
+.label {
+  white-space: nowrap;
+  overflow: hidden;
+  transition: opacity 0.3s ease, width 0.3s ease;
+}
+
+.sidebar:not(.sidebar-closed) .label {
+  opacity: 1;
+  width: auto;
+}
+
+.sidebar.sidebar-closed .label {
+  opacity: 0;
+  width: 0;
+}
+
 .error-message {
   background-color: #fdecea;
   color: #c53030;
@@ -192,3 +263,4 @@ const logout = () => {
   font-size: 14px;
 }
 </style>
+

@@ -11,7 +11,7 @@ if (lsData) {
   userMatric.value = lsData.login_name;
 }
 
-const selectedKurikulum = ref("Semua");
+const selectedKurikulum = ref("All");
 const searchQuery = ref("");
 
 const subjectRows = ref([]);
@@ -64,7 +64,7 @@ const filteredRows = computed(() => {
       row.code.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       row.name.toLowerCase().includes(searchQuery.value.toLowerCase());
     const matchKurikulum =
-      selectedKurikulum.value === "Semua" ||
+      selectedKurikulum.value === "All" ||
       row.kurikulum?.includes(selectedKurikulum.value);
     return matchSearch && matchKurikulum;
   });
@@ -94,91 +94,89 @@ watch([searchQuery, selectedKurikulum], () => {
   <div class="bg-gray-100 min-h-screen pt-20">
     <Toggle titleBanner="Subject" />
 
-    <!-- FILTERS & PAGINATION -->
-    <div class="flex flex-col md:flex-row justify-between items-center gap-3 px-4 py-4 max-w-6xl mx-auto">
-      <div class="flex flex-wrap items-center gap-3">
-        <div>
-          Curriculum:
-          <select v-model="selectedKurikulum" class="ml-1 px-2 py-1 border rounded">
-            <option value="Semua">All</option>
-            <option value="2025">2025</option>
-            <option value="2024">2024</option>
-            <option value="2023">2023</option>
-          </select>
-        </div>
+    <!-- Filters & Pagination -->
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4 px-4 py-4 max-w-6xl mx-auto font-[Segoe UI] text-[15px]">
+      <div class="flex flex-wrap items-center gap-2">
+        <label class="font-normal">Faculty:</label>
+        <select v-model="selectedKurikulum" class="border border-gray-400 rounded px-2 py-1 shadow-sm">
+          <option value="All">All</option>
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+          <option value="2023">2023</option>
+        </select>
+
         <input
           v-model="searchQuery"
-          placeholder="Search subject by code or name..."
-          class="border px-3 py-1 rounded w-64"
+          placeholder="Search by subject code or name..."
+          class="border border-gray-400 rounded px-3 py-1 w-72 shadow-sm"
         />
       </div>
 
-      <div class="flex items-center gap-2 text-sm">
-        <button @click="gotoPage(1)" :disabled="currentPage === 1">&lt;&lt;</button>
-        <button @click="gotoPage(currentPage - 1)" :disabled="currentPage === 1">&lt;</button>
-        <span>
-          Page
-          <select
-            v-model="currentPage"
-            @change="gotoPage(Number(currentPage))"
-            class="mx-1 px-2 py-1 border rounded"
-          >
-            <option v-for="page in pageCount" :key="page" :value="page">
-              {{ page }}
-            </option>
-          </select>
-          of {{ pageCount }}
-        </span>
-        <button @click="gotoPage(currentPage + 1)" :disabled="currentPage === pageCount">&gt;</button>
-        <button @click="gotoPage(pageCount)" :disabled="currentPage === pageCount">&gt;&gt;</button>
+      <!-- Pagination Style Match Screenshot -->
+      <div class="flex items-center gap-1 text-sm font-[Segoe UI]">
+        <button @click="gotoPage(1)" :disabled="currentPage === 1" class="px-2 py-1 border rounded">&laquo;</button>
+        <button @click="gotoPage(currentPage - 1)" :disabled="currentPage === 1" class="px-2 py-1 border rounded">&lt;</button>
+        <span>Page</span>
+        <select
+          v-model="currentPage"
+          @change="gotoPage(Number(currentPage))"
+          class="px-2 py-1 border rounded"
+        >
+          <option v-for="page in pageCount" :key="page" :value="page">{{ page }}</option>
+        </select>
+        <span>of {{ pageCount }}</span>
+        <button @click="gotoPage(currentPage + 1)" :disabled="currentPage === pageCount" class="px-2 py-1 border rounded">&gt;</button>
+        <button @click="gotoPage(pageCount)" :disabled="currentPage === pageCount" class="px-2 py-1 border rounded">&raquo;</button>
       </div>
     </div>
 
-    <!-- SUBJECT CARD SECTION -->
-    <div class="grid gap-4 px-4 py-2 max-w-6xl mx-auto grid-cols-1 md:grid-cols-2">
+    <!-- Error Message -->
+    <div v-if="error" class="text-red-600 text-center mt-2 text-sm">
+      {{ error }}
+    </div>
+
+    <!-- Subject Cards -->
+    <div class="grid gap-4 px-4 py-4 max-w-6xl mx-auto grid-cols-1 md:grid-cols-2">
       <div
         v-for="(subject, index) in paginatedRows"
-        :key="(currentPage - 1) * itemsPerPage + index"
-        class="bg-white border border-gray-200 hover:shadow-lg rounded-xl p-4 transition space-y-2 relative"
+        :key="index"
+        class="bg-white border border-gray-200 hover:shadow-md rounded-xl p-4 space-y-3"
       >
-        <button
-          class="absolute top-3 right-3 rounded bg-gray-200 hover:bg-gray-300 p-2"
-          title="View Schedule Info"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <rect x="6" y="3" width="12" height="18" rx="2" stroke-width="2" />
-            <path d="M9 7h6M9 11h6M9 15h3" stroke-width="2" stroke-linecap="round" />
-          </svg>
-        </button>
-
-        <div class="text-blue-700 font-bold text-lg">{{ subject.code }}</div>
-        <div class="text-gray-800 text-base font-medium">{{ subject.name }}</div>
-
-        <div class="flex justify-between text-sm text-gray-600">
-          <span>{{ subject.shortCode }}</span>
-          <span>Kredit: {{ subject.kredit }}</span>
+        <div class="flex justify-between items-start">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🏷️</span>
+            <span class="text-red-700 font-semibold text-lg">{{ subject.code }}</span>
+          </div>
         </div>
 
-        <div class="flex flex-wrap gap-3 pt-2 text-sm text-gray-700">
-          <span class="bg-gray-100 px-2 py-0.5 rounded">Section: {{ subject.seksyen ?? '-' }}</span>
-          <span class="bg-gray-100 px-2 py-0.5 rounded">Lecturer: {{ subject.drPensyarah ?? '-' }}</span>
-          <span class="bg-gray-100 px-2 py-0.5 rounded">Students: {{ subject.bilPelajar ?? '-' }}</span>
-        </div>
-      </div>
+        <div class="text-gray-800 font-medium text-base">{{ subject.name }}</div>
 
-      <div v-if="!paginatedRows.length && !error" class="text-center text-gray-400 italic py-10">
-        No subjects to display.
-      </div>
-      <div v-if="error" class="text-red-600 text-center py-4">
-        {{ error }}
+        <div class="flex flex-wrap gap-2 text-sm mt-2">
+          <span class="flex items-center gap-1 bg-red-50 text-red-800 border border-red-200 px-2 py-1 rounded">
+            🎓 {{ subject.shortCode }}
+          </span>
+          <span class="flex items-center gap-1 bg-gray-100 border border-gray-300 px-2 py-1 rounded">
+            🏫 Section: {{ subject.seksyen ?? '-' }}
+          </span>
+          <span class="flex items-center gap-1 bg-blue-50 border border-blue-200 px-2 py-1 rounded">
+            👥 Students: {{ subject.bilPelajar ?? 'N/A' }}
+          </span>
+        </div>
       </div>
     </div>
 
-    <!-- FOOTER -->
-    <p class="text-xs text-center px-4 pb-6 text-gray-600">
-      If you have any comments or questions regarding this page, please contact
-      <a href="mailto:ttms@fc.utm.my" class="text-blue-600">ttms@fc.utm.my</a>.<br />
-      Copyright &copy; 2002–2025, Faculty of Computing, UTM. All rights reserved.
+    <!-- Footer -->
+    <p class="text-xs text-center mt-6 px-4 text-gray-600">
+      If you have any comments or questions regarding this webpage, please contact
+      <a href="mailto:ttms@fc.utm.my" class="text-red-600">ttms@fc.utm.my</a>.<br />
+      &copy; 2002–2025, Faculty of Computing, UTM. All rights reserved.
     </p>
   </div>
 </template>
+
+<style>
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 15px;
+}
+</style>

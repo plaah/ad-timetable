@@ -17,6 +17,7 @@ const rooms = ref([]);
 const error = ref(null);
 const currentPage = ref(1);
 const itemsPerPage = 10;
+const searchQuery = ref("");
 
 const formatRoomData = (room) => ({
   code: room.kod_ruang,
@@ -34,18 +35,26 @@ const fetchRooms = async () => {
     const data = await ruangApi.getRoomsByFaculty(selectedFaculty.value);
     rooms.value = Array.isArray(data) ? data.map(formatRoomData) : [formatRoomData(data)];
   } catch (err) {
-    error.value = "Gagal memuatkan data ruang.";
+    error.value = "Failed to load room data.";
     rooms.value = [];
   }
 };
 
-watch(selectedFaculty, fetchRooms);
+watch([selectedFaculty], fetchRooms);
+watch([searchQuery], () => (currentPage.value = 1));
 onMounted(fetchRooms);
 
-const totalPages = computed(() => Math.ceil(rooms.value.length / itemsPerPage));
+const filteredRooms = computed(() => {
+  return rooms.value.filter((room) =>
+    room.code.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    room.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+  );
+});
+
+const totalPages = computed(() => Math.ceil(filteredRooms.value.length / itemsPerPage));
 const paginatedRooms = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
-  return rooms.value.slice(start, start + itemsPerPage);
+  return filteredRooms.value.slice(start, start + itemsPerPage);
 });
 const setPage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
@@ -55,23 +64,29 @@ const setPage = (page) => {
 </script>
 
 <template>
-  <div class="bg-gray-100 min-h-screen pt-20">
+  <div class="bg-gray-100 min-h-screen pt-20 font-[Segoe UI] text-[15px]">
     <Toggle titleBanner="Venue" />
 
-    <!-- Filter + Pagination -->
-    <div class="flex flex-col md:flex-row justify-between items-center gap-3 px-4 py-4 max-w-6xl mx-auto">
-      <label class="text-sm">
-        Pilih Fakulti:
-        <select v-model="selectedFaculty" class="border border-gray-300 rounded px-3 py-1 ml-2">
+    <!-- Filters & Pagination -->
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4 px-4 py-4 max-w-6xl mx-auto">
+      <div class="flex flex-wrap items-center gap-2">
+        <label class="font-normal">Faculty:</label>
+        <select v-model="selectedFaculty" class="border border-gray-400 rounded px-2 py-1 shadow-sm">
           <option value="FSKSM">FSKSM</option>
           <option value="FKE">FKE</option>
           <option value="FABU">FABU</option>
         </select>
-      </label>
 
-      <div class="flex items-center gap-2 text-sm">
-        <button @click="setPage(1)" :disabled="currentPage === 1">&lt;&lt;</button>
-        <button @click="setPage(currentPage - 1)" :disabled="currentPage === 1">&lt;</button>
+        <input
+          v-model="searchQuery"
+          placeholder="Search by room code or name..."
+          class="border border-gray-400 rounded px-3 py-1 w-72 shadow-sm"
+        />
+      </div>
+
+      <div class="flex items-center gap-1 text-sm font-[Segoe UI]">
+        <button @click="setPage(1)" :disabled="currentPage === 1" class="px-2 py-1 border rounded">&laquo;</button>
+        <button @click="setPage(currentPage - 1)" :disabled="currentPage === 1" class="px-2 py-1 border rounded">&lt;</button>
         <span>Page</span>
         <select
           v-model="currentPage"
@@ -81,31 +96,28 @@ const setPage = (page) => {
           <option v-for="page in totalPages" :key="page" :value="page">{{ page }}</option>
         </select>
         <span>of {{ totalPages }}</span>
-        <button @click="setPage(currentPage + 1)" :disabled="currentPage === totalPages">&gt;</button>
-        <button @click="setPage(totalPages)" :disabled="currentPage === totalPages">&gt;&gt;</button>
+        <button @click="setPage(currentPage + 1)" :disabled="currentPage === totalPages" class="px-2 py-1 border rounded">&gt;</button>
+        <button @click="setPage(totalPages)" :disabled="currentPage === totalPages" class="px-2 py-1 border rounded">&raquo;</button>
       </div>
     </div>
 
-    <!-- Error Notice -->
+    <!-- Error Message -->
     <div v-if="error" class="text-red-600 text-center mt-2 text-sm">
       {{ error }}
     </div>
 
-    <!-- ROOM CARD LIST -->
+    <!-- Room Cards -->
     <div class="grid gap-4 px-4 py-4 max-w-6xl mx-auto grid-cols-1 md:grid-cols-2 lg:grid-cols-2">
       <div
         v-for="(room, index) in paginatedRooms"
         :key="index"
-        class="bg-white border border-gray-200 hover:shadow-md rounded-xl transition p-4 space-y-2"
+        class="bg-white border border-red-200 hover:shadow-md rounded-xl transition p-4 space-y-2"
       >
         <div class="flex justify-between items-start">
-          <div class="text-lg font-semibold text-blue-700">{{ room.code }}</div>
-          <button title="Lihat Jadual" class="p-1.5 bg-blue-100 hover:bg-blue-200 rounded">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <rect x="6" y="3" width="12" height="18" rx="2" stroke-width="2" />
-              <path d="M9 7h6M9 11h6M9 15h3" stroke-width="2" stroke-linecap="round" />
-            </svg>
-          </button>
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🏷️</span>
+            <div class="text-lg font-semibold text-red-700">{{ room.code }}</div>
+          </div>
         </div>
 
         <div class="font-medium text-gray-800">
@@ -115,15 +127,20 @@ const setPage = (page) => {
           </span>
         </div>
 
-        <div class="flex justify-between text-sm text-gray-600">
-          <div>{{ room.faculty || 'Fakulti tidak tersedia' }}</div>
-          <div>{{ room.type || 'Jenis tidak diketahui' }}</div>
-          <div class="flex items-center gap-1">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path d="M17 20H7a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2Z" />
-              <circle cx="12" cy="7" r="3" />
-            </svg>
-            {{ room.capacity || 'Tidak tersedia' }}
+        <div class="flex gap-3 mt-3 text-sm text-gray-600 flex-wrap">
+          <div class="flex items-center gap-1 bg-red-50 px-2 py-1 rounded text-red-800 border border-red-200">
+            <span class="text-lg">🎓</span>
+            {{ room.faculty || 'Unknown' }}
+          </div>
+
+          <div class="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded border border-gray-300">
+            <span class="text-lg">🏢</span>
+            {{ room.type || 'Room' }}
+          </div>
+
+          <div class="flex items-center gap-1 bg-blue-50 px-2 py-1 rounded border border-blue-200">
+            <span class="text-lg">👥</span>
+            Capacity: {{ room.capacity || 'N/A' }}
           </div>
         </div>
       </div>
@@ -132,8 +149,8 @@ const setPage = (page) => {
     <!-- Footer -->
     <p class="text-xs text-center mt-6 px-4 text-gray-600">
       If you have any comments or questions regarding this webpage, please contact
-      <a href="mailto:ttms@fc.utm.my" class="text-blue-600">ttms@fc.utm.my</a><br />
-      Copyright &copy; 2002-2025, Faculty of Computing, UTM. All rights reserved.
+      <a href="mailto:ttms@fc.utm.my" class="text-red-600">ttms@fc.utm.my</a>.<br />
+      Copyright &copy; 2002–2025, Faculty of Computing, UTM. All rights reserved.
     </p>
   </div>
 </template>
