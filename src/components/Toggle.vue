@@ -4,14 +4,8 @@
     class="header fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-3 bg-gradient-to-r from-[#5a2a2a] via-[#933b3b] to-[#ba5757] text-white shadow-md"
   >
     <div class="flex items-center space-x-4">
-      <button @click="toggleSidebar" class="toggle-btn">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
+      <button @click="openSidebar" class="toggle-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
@@ -22,76 +16,56 @@
     <h1 class="text-xl font-bold font-poppins tracking-wider">Timely</h1>
   </header>
 
-  <!-- Sidebar -->
-<div :class="['sidebar', { 'sidebar-closed': !sidebarOpen }]">
-  <div class="sidebar-header">
-    <h2 class="text-lg font-bold" v-if="sidebarOpen">Menu</h2>
-    <button @click="toggleSidebar" class="close-btn">&times;</button>
-  </div>
-  <nav class="nav-links">
-    <div
-      class="nav-item"
-      :class="{ active: isActive('/Home') }"
-      @click.prevent="navigate('/Home')"
-    >
-      <AppIcon name="home" />
-      <span class="label" v-if="sidebarOpen">Home</span>
-    </div>
-    <div
-      class="nav-item"
-      :class="{ active: isActive('/Timetable') }"
-      @click.prevent="navigate('/Timetable')"
-    >
-      <AppIcon name="timetable" />
-      <span class="label" v-if="sidebarOpen">Timetable</span>
-    </div>
-    <div
-      class="nav-item"
-      :class="{ active: isActive('/Venue') }"
-      @click.prevent="navigate('/Venue')"
-    >
-      <AppIcon name="venue" />
-      <span class="label" v-if="sidebarOpen">Venue</span>
-    </div>
-    <div
-      class="nav-item"
-      :class="{ active: isActive('/Subject') }"
-      @click.prevent="navigate('/Subject')"
-    >
-      <AppIcon name="subjek" />
-      <span class="label" v-if="sidebarOpen">Subject</span>
-    </div>
-    <div
-      class="nav-item"
-      :class="{ active: isActive('/Lecturer') }"
-      @click.prevent="navigate('/Lecturer')"
-    >
-      <AppIcon name="lecturer" />
-      <span class="label" v-if="sidebarOpen">Lecturer</span>
-    </div>
-    <div
-      class="nav-item"
-      :class="{ active: isActive('/Student') }"
-      @click.prevent="navigate('/Student')"
-    >
-      <AppIcon name="student" />
-      <span class="label" v-if="sidebarOpen">Student</span>
-    </div>
-    <div
-      class="nav-item"
-      :class="{ active: isActive('/Curriculum') }"
-      @click.prevent="navigate('/Curriculum')"
-    >
-      <AppIcon name="curriculum" />
-      <span class="label" v-if="sidebarOpen">Curriculum</span>
-    </div>
-    <div class="nav-item" @click="logout">
-      <AppIcon name="logout" />
-      <span class="label" v-if="sidebarOpen">Logout</span>
-    </div>
-  </nav>
-</div>
+  <!-- Overlay -->
+  <div v-if="sidebarVisible" class="overlay" @click="closeSidebar"></div>
 
+  <!-- Sidebar -->
+  <div
+    v-if="sidebarVisible"
+    ref="sidebarRef"
+    :class="['sidebar', { 'sidebar-collapsed': isCollapsed }]"
+  >
+    <div class="sidebar-header">
+      <h2 v-if="!isCollapsed" class="text-lg font-bold">Menu</h2>
+      <button @click="toggleCollapse" class="expand-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="#933b3b">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+    </div>
+
+    <nav class="nav-links">
+      <div
+        v-for="item in navItems"
+        :key="item.path"
+        class="nav-link"
+        :class="{ active: isActive(item.path) }"
+        @click.prevent="navigate(item.path)"
+      >
+        <AppIcon :name="item.icon" />
+        <template v-if="!isCollapsed">
+          <transition name="fade">
+            <span class="link-text">{{ item.label }}</span>
+          </transition>
+        </template>
+        <template v-else>
+          <span class="tooltip">{{ item.label }}</span>
+        </template>
+      </div>
+
+      <div class="nav-link" @click="logout">
+        <AppIcon name="logout" />
+        <template v-if="!isCollapsed">
+          <transition name="fade">
+            <span class="link-text">Logout</span>
+          </transition>
+        </template>
+        <template v-else>
+          <span class="tooltip">Logout</span>
+        </template>
+      </div>
+    </nav>
+  </div>
 
   <div v-if="error" class="error-message">
     {{ error }}
@@ -101,7 +75,7 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, onBeforeUnmount } from "vue";
 import AppIcon from "./AppIcon.vue";
 import { userName, userMatric } from "@/constants/ApiConstants.js";
 
@@ -111,8 +85,10 @@ if (lsData) {
   userMatric.value = lsData.login_name;
 }
 
-const sidebarOpen = ref(false);
 const error = ref(null);
+const sidebarVisible = ref(false);
+const isCollapsed = ref(true);
+const sidebarRef = ref(null);
 
 const props = defineProps({
   titleBanner: {
@@ -121,12 +97,20 @@ const props = defineProps({
   },
 });
 
-const toggleSidebar = () => {
-  sidebarOpen.value = !sidebarOpen.value;
+const openSidebar = () => {
+  sidebarVisible.value = true;
+  isCollapsed.value = true;
+};
+
+const closeSidebar = () => {
+  sidebarVisible.value = false;
+};
+
+const toggleCollapse = () => {
+  isCollapsed.value = !isCollapsed.value;
 };
 
 const navigate = (url) => {
-  toggleSidebar();
   window.location.href = url;
 };
 
@@ -138,13 +122,35 @@ const logout = () => {
   localStorage.removeItem("web.fc.utm.my_usersession");
   window.location.replace("/login");
 };
+
+const navItems = [
+  { path: "/Home", icon: "home", label: "Home" },
+  { path: "/Timetable", icon: "timetable", label: "Timetable" },
+  { path: "/Venue", icon: "venue", label: "Venue" },
+  { path: "/Subject", icon: "subjek", label: "Subject" },
+  { path: "/Lecturer", icon: "lecturer", label: "Lecturer" },
+  { path: "/Student", icon: "student", label: "Student" },
+  { path: "/Curriculum", icon: "curriculum", label: "Curriculum" },
+];
+
+// Optional: ESC to close sidebar
+const handleKeydown = (e) => {
+  if (e.key === "Escape") closeSidebar();
+};
+
+onMounted(() => {
+  window.addEventListener("keydown", handleKeydown);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("keydown", handleKeydown);
+});
 </script>
 
 <style scoped>
 .header {
   font-family: 'Segoe UI', sans-serif;
 }
-
 .toggle-btn {
   background-color: transparent;
   color: white;
@@ -153,9 +159,18 @@ const logout = () => {
   border-radius: 6px;
   transition: transform 0.2s;
 }
-
 .toggle-btn:hover {
   transform: scale(1.15);
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.2);
+  z-index: 40;
 }
 
 .sidebar {
@@ -163,22 +178,15 @@ const logout = () => {
   top: 0;
   left: 0;
   height: 100%;
-  width: 60px; /* Compact by default */
+  width: 260px;
   background: #933b3b;
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
   z-index: 50;
-  overflow-x: hidden;
   overflow-y: auto;
-  transition: all 0.4s ease;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  transition: width 0.3s ease;
 }
-
-.sidebar:not(.sidebar-closed) {
-  width: 260px; /* Expanded width */
-}
-
-.sidebar-closed {
-  transform: translateX(-100%);
+.sidebar-collapsed {
+  width: 70px;
 }
 
 .sidebar-header {
@@ -192,17 +200,14 @@ const logout = () => {
   border-bottom: 1px solid #e0e0e0;
 }
 
-.close-btn {
+.expand-btn {
   background: none;
   border: none;
-  color: #933b3b;
-  font-size: 22px;
   cursor: pointer;
   transition: transform 0.3s ease;
 }
-
-.close-btn:hover {
-  transform: rotate(90deg);
+.expand-btn:hover {
+  transform: scale(1.2);
 }
 
 .nav-links {
@@ -210,47 +215,62 @@ const logout = () => {
   flex-direction: column;
   padding: 20px 10px;
 }
-
-.nav-item {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 16px;
+.nav-link {
+  color: white;
+  text-decoration: none;
   padding: 12px;
   margin-bottom: 10px;
-  color: white;
   border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
   font-weight: 600;
   font-size: 15px;
   transition: all 0.25s ease;
-  cursor: pointer;
+  position: relative;
 }
-
-.nav-item:hover {
+.nav-link:hover {
   background: rgba(255, 255, 255, 0.15);
-  transform: translateX(5px);
 }
-
-.nav-item.active {
+.nav-link.active {
   background-color: rgba(255, 255, 255, 0.2);
   font-weight: 700;
-  transform: scale(1.03);
 }
 
-.label {
+.link-text {
   white-space: nowrap;
   overflow: hidden;
-  transition: opacity 0.3s ease, width 0.3s ease;
 }
 
-.sidebar:not(.sidebar-closed) .label {
-  opacity: 1;
-  width: auto;
-}
-
-.sidebar.sidebar-closed .label {
+.tooltip {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  background: white;
+  color: #933b3b;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
   opacity: 0;
-  width: 0;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  margin-left: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+.nav-link:hover .tooltip {
+  opacity: 1;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 .error-message {
@@ -263,4 +283,3 @@ const logout = () => {
   font-size: 14px;
 }
 </style>
-
