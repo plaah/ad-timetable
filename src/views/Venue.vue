@@ -2,7 +2,7 @@
 import { ref, watch, onMounted, computed } from "vue";
 import Toggle from "@/components/Toggle.vue";
 import ProfileBanner from "@/components/ProfileBanner.vue";
-import RuangApi from "@/api/RuangApi";
+import VenueApi from "@/api/VenueApi";
 import { userInfo, userName, userMatric } from "@/constants/ApiConstants.js";
 
 const lsData = JSON.parse(localStorage.getItem("web.fc.utm.my_usersession"));
@@ -11,7 +11,7 @@ if (lsData) {
   userMatric.value = lsData.login_name;
 }
 
-const ruangApi = new RuangApi();
+const venueApi = new VenueApi();
 const selectedFaculty = ref("FSKSM");
 const rooms = ref([]);
 const error = ref(null);
@@ -32,7 +32,7 @@ const fetchRooms = async () => {
   try {
     error.value = null;
     currentPage.value = 1;
-    const data = await ruangApi.getRoomsByFaculty(selectedFaculty.value);
+    const data = await venueApi.getRoomsByFaculty(selectedFaculty.value);
     rooms.value = Array.isArray(data) ? data.map(formatRoomData) : [formatRoomData(data)];
   } catch (err) {
     error.value = "Failed to load room data.";
