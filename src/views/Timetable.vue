@@ -34,7 +34,7 @@
 
     <!-- DAILY VIEW -->
     <div v-show="viewMode === 'daily'">
-      <div class="px-6 py-4 bg-white shadow rounded-xl mx-4 mt-6">
+      <div class="px-6 py-4 bg-white shadow rounded-xl mx-4 mt-6 relative overflow-visible">
         <!-- Session Filter -->
         <div class="flex justify-end">
           <select
@@ -45,51 +45,26 @@
           </select>
         </div>
 
-        <!-- Day Tabs: full width with justified spacing -->
-        <div class="grid grid-cols-7 gap-2 mt-6 text-sm font-medium relative">
-          <div
-            v-for="(day, i) in days"
-            :key="i"
-            class="relative text-center"
-          >
-            <!-- Day Button -->
+        <!-- Day Tabs: mobile scroll, desktop grid -->
+        <div class="mt-6 text-sm font-medium relative overflow-x-auto">
+          <div class="flex sm:grid sm:grid-cols-7 gap-2 min-w-[700px] sm:min-w-0">
             <div
-              @click="selectedDay = i"
-              :class="selectedDay === i
-                ? 'bg-[#933b3b] text-white shadow-md'
-                : 'hover:bg-gray-100 text-gray-700'"
-              class="px-3 py-2 rounded-lg cursor-pointer transition-all w-full"
+              v-for="(day, i) in days"
+              :key="i"
+              class="relative text-center"
+              :ref="el => dayRefs[i] = el"
             >
-              {{ day }}
-            </div>
-
-            <!-- Animated Schedule Popup -->
-            <transition name="fade-slide">
+              <!-- Day Button -->
               <div
-  v-if="selectedDay === i"
-  class="absolute top-full left-1/2 transform -translate-x-1/2 mt-6 bg-white border rounded-xl p-4 shadow-xl w-[300px] z-10"
->
-
-                <div v-if="daySchedule.length === 0" class="text-center text-gray-400 text-sm italic">
-                  No classes scheduled on {{ days[selectedDay] }}.
-                </div>
-                <div v-else class="space-y-3">
-                  <div
-                    v-for="(item, index) in daySchedule"
-                    :key="index"
-                    class="p-3 border-l-4 rounded-md"
-                    :class="item.color"
-                  >
-                    <div class="text-sm font-semibold text-[#933b3b]">
-                      {{ item.time }} — {{ item.subjectName }}
-                    </div>
-                    <div class="text-xs text-gray-600">📘 {{ item.subject }}</div>
-                    <div class="text-xs text-gray-500">Section: {{ item.section }}</div>
-                    <div class="text-xs text-gray-500" v-if="item.room">📍 {{ item.room }}</div>
-                  </div>
-                </div>
+                @click="showPopupBelow(i)"
+                :class="selectedDay === i
+                  ? 'bg-[#933b3b] text-white shadow-md'
+                  : 'hover:bg-gray-100 text-gray-700'"
+                class="px-3 py-2 rounded-lg cursor-pointer transition-all w-full whitespace-nowrap"
+              >
+                {{ day }}
               </div>
-            </transition>
+            </div>
           </div>
         </div>
       </div>
@@ -115,9 +90,9 @@
                 <td class="p-3 font-semibold text-gray-700">{{ row.waktu }}</td>
                 <td v-for="(slot, i) in row.slots" :key="i" class="p-3 align-top">
                   <div v-if="slot">
-                    <div class="font-bold">{{ slot.split('\\n')[0] }}</div>
-                    <div class="text-xs text-gray-600">{{ slot.split('\\n')[1] }}</div>
-                    <div class="text-xs text-gray-500">{{ slot.split('\\n')[2] }}</div>
+                    <div class="font-bold">{{ slot.split('\n')[0] }}</div>
+                    <div class="text-xs text-gray-600">{{ slot.split('\n')[1] }}</div>
+                    <div class="text-xs text-gray-500">{{ slot.split('\n')[2] }}</div>
                   </div>
                 </td>
               </tr>
@@ -126,40 +101,78 @@
         </div>
       </div>
     </div>
+
+    <!-- Global Popup -->
+    <teleport to="body">
+      <transition name="fade-slide">
+        <div
+          v-if="showPopup"
+          :style="{ position: 'absolute', top: popupTop + 'px', left: popupLeft + 'px' }"
+          class="bg-white border rounded-xl p-4 shadow-xl w-[300px] z-50"
+        >
+          <div v-if="daySchedule.length === 0" class="text-center text-gray-400 text-sm italic">
+            No classes scheduled on {{ days[selectedDay] }}.
+          </div>
+          <div v-else class="space-y-3">
+            <div
+              v-for="(item, index) in daySchedule"
+              :key="index"
+              class="p-3 border-l-4 rounded-md"
+              :class="item.color"
+            >
+              <div class="text-sm font-semibold text-[#933b3b]">
+                {{ item.time }} — {{ item.subjectName }}
+              </div>
+              <div class="text-xs text-gray-600">📘 {{ item.subject }}</div>
+              <div class="text-xs text-gray-500">Section: {{ item.section }}</div>
+              <div class="text-xs text-gray-500" v-if="item.room">📍 {{ item.room }}</div>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </teleport>
   </div>
 </template>
 
 <script setup>
-import StudentSubjectApi from "@/api/StudentSubjectApi";
-import TimetableApi from "@/api/TimetableApi";
-import Toggle from "@/components/Toggle.vue";
-import { ref, computed, onMounted, watch } from "vue";
-import { userMatric, userName } from "@/constants/ApiConstants";
-import { timetable, days } from "@/constants/TimeTableConstants";
+import { ref, onMounted, computed, watch } from 'vue';
+import Toggle from '@/components/Toggle.vue';
+import StudentSubjectApi from '@/api/StudentSubjectApi';
+import TimetableApi from '@/api/TimetableApi';
+import { userMatric, userName } from '@/constants/ApiConstants';
+import { timetable, days } from '@/constants/TimeTableConstants';
 
-const viewMode = ref("daily");
-const switchView = (mode) => { viewMode.value = mode; };
+const viewMode = ref('daily');
+const switchView = (mode) => {
+  viewMode.value = mode;
+  if (mode !== 'daily') showPopup.value = false; // Hide popup when switching away from daily
+};
 
-const activeSession = ref("2024/2025 - 2");
+const activeSession = ref('2024/2025 - 2');
 const selectedDay = ref(new Date().getDay());
-const sessionOptions = ["2024/2025 - 2", "2024/2025 - 1", "2023/2024 - 2", "2023/2024 - 1"];
-
+const sessionOptions = [
+  '2024/2025 - 2', '2024/2025 - 1', '2023/2024 - 2', '2023/2024 - 1'
+];
 const subjectList = ref([]);
 const timetableData = ref(JSON.parse(JSON.stringify(timetable)));
 const isLoading = ref(true);
+const showPopup = ref(false);
+const popupTop = ref(0);
+const popupLeft = ref(0);
+const dayRefs = ref([]);
+
+const greeting = computed(() => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+});
 
 const lsData = JSON.parse(localStorage.getItem("web.fc.utm.my_usersession"));
 if (lsData) {
   userName.value = lsData.full_name;
   userMatric.value = lsData.login_name;
 }
-
-const greeting = computed(() => {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
-});
 
 const studentSubjectApi = new StudentSubjectApi();
 const timetableApi = new TimetableApi();
@@ -192,7 +205,6 @@ const daySchedule = computed(() => {
     "bg-[#ffecec] border-[#933b3b]",
     "bg-[#ffe2e2] border-[#933b3b]",
   ];
-
   timetableData.value.forEach((row) => {
     const slot = row.slots[selectedDay.value];
     if (slot && slot.trim()) {
@@ -228,7 +240,6 @@ watch(filteredSubjects, async (newSubs) => {
         semester: s.semester
       })
     ))).flat();
-
     schedules.forEach(i => {
       const rIdx = (i.masa ?? 1) - 1;
       const cIdx = (i.hari ?? 1) - 1;
@@ -242,7 +253,23 @@ watch(filteredSubjects, async (newSubs) => {
     isLoading.value = false;
   }
 });
+
+function showPopupBelow(index) {
+  if (selectedDay.value === index && showPopup.value) {
+    showPopup.value = false;
+    return;
+  }
+  const el = dayRefs.value[index];
+  if (el) {
+    const rect = el.getBoundingClientRect();
+    popupTop.value = rect.bottom + window.scrollY + 30; // shifted further down
+    popupLeft.value = rect.left + rect.width / 2 - 150;
+    selectedDay.value = index;
+    showPopup.value = true;
+  }
+}
 </script>
+
 
 <style scoped>
 .fade-slide-enter-active,

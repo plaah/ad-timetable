@@ -10,7 +10,6 @@ if (lsData) {
   userMatric.value = lsData.login_name;
 }
 
-// Dummy curriculum data (realistic)
 const curricula = ref([
   {
     name: "Bachelor of Computer Science (Software Engineering)",
@@ -48,7 +47,6 @@ const curricula = ref([
     elektif: 3,
     jumlah: 32,
   },
-  // Extra dummy but realistic
   {
     name: "Bachelor of Computer Science (Artificial Intelligence)",
     sesi: "2022/2023",
@@ -85,10 +83,46 @@ const curricula = ref([
     elektif: 5,
     jumlah: 36,
   },
+  {
+    name: "Bachelor of Information Systems",
+    sesi: "2020/2021",
+    semester: 2,
+    tahun: 2,
+    teras: 27,
+    elektif: 7,
+    jumlah: 34,
+  },
+  {
+    name: "Bachelor of Software Technology",
+    sesi: "2021/2022",
+    semester: 1,
+    tahun: 1,
+    teras: 28,
+    elektif: 6,
+    jumlah: 34,
+  },
+  {
+    name: "Bachelor of Data Analytics",
+    sesi: "2019/2020",
+    semester: 2,
+    tahun: 2,
+    teras: 25,
+    elektif: 7,
+    jumlah: 32,
+  },
+  {
+    name: "Bachelor of Applied Computing",
+    sesi: "2022/2023",
+    semester: 1,
+    tahun: 1,
+    teras: 26,
+    elektif: 5,
+    jumlah: 31,
+  },
 ]);
 
 const currentPage = ref(1);
-const itemsPerPage = 4;
+const itemsPerPage = 6;
 
 const pageCount = computed(() => {
   return Math.ceil(curricula.value.length / itemsPerPage) || 1;
@@ -107,90 +141,76 @@ function gotoPage(page) {
 </script>
 
 <template>
-  <div class="bg-gray-100 min-h-screen pt-20 flex flex-col justify-between">
-    <div>
-      <Toggle ProfileBanner titleBanner="Curriculum" />
+  <div class="bg-gray-50 min-h-screen pt-20 flex flex-col">
+    <Toggle ProfileBanner titleBanner="Curriculum" />
 
-      <!-- CARD UI SECTION -->
-      <div class="grid gap-4 px-4 py-6 max-w-6xl mx-auto grid-cols-1 md:grid-cols-2">
-        <div
-          v-for="(item, index) in paginatedCurricula"
-          :key="index"
-          class="bg-white border border-gray-200 hover:shadow-lg rounded-xl p-4 transition space-y-2 relative"
+    <div class="grid gap-6 px-6 py-6 max-w-7xl mx-auto grid-cols-1 md:grid-cols-2 xl:grid-cols-3 flex-grow">
+      <div
+        v-for="(item, index) in paginatedCurricula"
+        :key="index"
+        class="bg-white rounded-xl shadow-md px-6 py-5 relative hover:shadow-lg transition"
+      >
+        <button
+          class="absolute top-4 right-4 rounded bg-gray-100 hover:bg-gray-200 p-2"
+          title="Schedule Info"
         >
-          <button
-            class="absolute top-3 right-3 rounded bg-gray-200 hover:bg-gray-300 p-2"
-            title="Schedule Info"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <rect x="6" y="3" width="12" height="18" rx="2" stroke-width="2" />
-              <path d="M9 7h6M9 11h6M9 15h3" stroke-width="2" stroke-linecap="round" />
-            </svg>
-          </button>
-
-          <div class="text-blue-700 font-bold text-lg">{{ item.name }}</div>
-
-          <div class="text-sm text-gray-600">
-            Entry Info:
-          </div>
-
-          <div class="flex flex-wrap gap-3 pt-1 text-sm text-gray-700">
-            <span class="bg-gray-100 px-2 py-0.5 rounded">Session: {{ item.sesi }}</span>
-            <span class="bg-gray-100 px-2 py-0.5 rounded">Semester: {{ item.semester }}</span>
-            <span class="bg-gray-100 px-2 py-0.5 rounded">Year: {{ item.tahun }}</span>
-          </div>
-
-          <div class="flex flex-wrap gap-3 pt-1 text-xs text-gray-500">
-            <span class="bg-gray-50 px-2 py-0.5 rounded">Core: {{ item.teras }}</span>
-            <span class="bg-gray-50 px-2 py-0.5 rounded">Electives: {{ item.elektif }}</span>
-            <span class="bg-gray-50 px-2 py-0.5 rounded">Total: {{ item.jumlah }}</span>
-          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <rect x="6" y="3" width="12" height="18" rx="2" stroke-width="2" />
+            <path d="M9 7h6M9 11h6M9 15h3" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+        <div class="font-semibold text-base text-[#933b3b] mb-1">
+          {{ item.name }}
         </div>
-
-        <div v-if="!paginatedCurricula.length" class="text-center text-gray-400 italic py-10">
-          No curricula found.
+        <div class="text-gray-700 mb-2 text-sm">Session: {{ item.sesi }} | Semester: {{ item.semester }} | Year: {{ item.tahun }}</div>
+        <div class="flex flex-wrap gap-2 text-gray-600 text-sm">
+          <span class="bg-gray-100 px-2 py-1 rounded border text-xs">📚 Core: {{ item.teras }}</span>
+          <span class="bg-gray-100 px-2 py-1 rounded border text-xs">🎯 Electives: {{ item.elektif }}</span>
+          <span class="bg-blue-100 px-2 py-1 rounded border text-xs">📊 Total: {{ item.jumlah }}</span>
         </div>
       </div>
     </div>
 
-    <!-- Pagination + Footer together -->
-    <div class="mt-10">
-      <!-- Pagination -->
-      <div class="flex justify-center items-center gap-2 pb-6">
-        <button
-          @click="gotoPage(currentPage - 1)"
-          :disabled="currentPage === 1"
-          class="px-3 py-1 rounded-full bg-gray-200 disabled:opacity-50"
-        >
-          «
-        </button>
-        <button
-          v-for="page in pageCount"
-          :key="page"
-          @click="gotoPage(page)"
-          :class="{
-            'bg-[#933b3b] text-white font-semibold shadow': currentPage === page,
-            'bg-gray-100 hover:bg-gray-300': currentPage !== page
-          }"
-          class="w-8 h-8 flex items-center justify-center rounded-full"
-        >
-          {{ page }}
-        </button>
-        <button
-          @click="gotoPage(currentPage + 1)"
-          :disabled="currentPage === pageCount"
-          class="px-3 py-1 rounded-full bg-gray-200 disabled:opacity-50"
-        >
-          »
-        </button>
-      </div>
-
-      <!-- Footer -->
-      <p class="text-xs text-center px-4 pb-10 text-gray-600">
-        If you have any comments or questions regarding this page, please contact
-        <a href="mailto:ttms@fc.utm.my" class="text-blue-600">ttms@fc.utm.my</a><br />
-        Copyright © 2002–2025, Faculty of Computing, UTM. All rights reserved.
-      </p>
+    <div class="flex justify-center items-center space-x-2 py-6 mb-6">
+      <button
+        @click="gotoPage(currentPage - 1)"
+        :disabled="currentPage === 1"
+        class="px-3 py-1 rounded-full bg-gray-200 hover:bg-gray-300 text-sm disabled:opacity-50"
+      >
+        «
+      </button>
+      <button
+        v-for="page in pageCount"
+        :key="page"
+        @click="gotoPage(page)"
+        class="px-3 py-1 rounded-full text-sm"
+        :class="{
+          'bg-[#933b3b] text-white font-semibold shadow': currentPage === page,
+          'bg-gray-100 hover:bg-gray-300': currentPage !== page
+        }"
+      >
+        {{ page }}
+      </button>
+      <button
+        @click="gotoPage(currentPage + 1)"
+        :disabled="currentPage === pageCount"
+        class="px-3 py-1 rounded-full bg-gray-200 hover:bg-gray-300 text-sm disabled:opacity-50"
+      >
+        »
+      </button>
     </div>
+
+    <p class="text-xs text-center px-4 pb-6 text-gray-600">
+      If you have any comments or inquiries regarding this webpage, please contact the webmaster at
+      <a href="mailto:ttms@fc.utm.my" class="text-blue-600">ttms@fc.utm.my</a><br />
+      Copyright ©️ 2002–2025, Faculty of Computing, UTM
+    </p>
   </div>
-</template>
+</template>  
+
+<style scoped>
+.min-h-screen {
+  display: flex;
+  flex-direction: column;
+}
+</style>

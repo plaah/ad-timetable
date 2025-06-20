@@ -9,53 +9,40 @@ if (lsData) {
   userMatric.value = lsData.login_name;
 }
 
-// Dummy lecturer data
 const lecturers = ref([
-  {
-    name: "AB. RAZAK BIN CHE HUSSIN",
-    subjectCount: 2,
-    sectionCount: 4,
-    studentCount: 100,
-  },
-  {
-    name: "ADILA FIRDAUS BINTI ARBAIN",
-    subjectCount: 4,
-    sectionCount: 3,
-    studentCount: 85,
-  },
-  {
-    name: "AIDA BT. ALI",
-    subjectCount: 3,
-    sectionCount: 4,
-    studentCount: 120,
-  },
-  {
-    name: "AHMAD FARIZ BIN ALI",
-    subjectCount: 3,
-    sectionCount: 5,
-    studentCount: 110,
-  },
-  {
-    name: "NURUL AIN BINTI MOHD NOH",
-    subjectCount: 5,
-    sectionCount: 6,
-    studentCount: 130,
-  },
-  {
-    name: "SAIFUL NIZAM BIN ISMAIL",
-    subjectCount: 2,
-    sectionCount: 2,
-    studentCount: 70,
-  },
+  { name: "AB. RAZAK BIN CHE HUSSIN", subjectCount: 2, sectionCount: 4, studentCount: 100 },
+  { name: "ADILA FIRDAUS BINTI ARBAIN", subjectCount: 4, sectionCount: 3, studentCount: 85 },
+  { name: "AIDA BT. ALI", subjectCount: 3, sectionCount: 4, studentCount: 120 },
+  { name: "AHMAD FARIZ BIN ALI", subjectCount: 3, sectionCount: 5, studentCount: 110 },
+  { name: "NURUL AIN BINTI MOHD NOH", subjectCount: 5, sectionCount: 6, studentCount: 130 },
+  { name: "SAIFUL NIZAM BIN ISMAIL", subjectCount: 2, sectionCount: 2, studentCount: 70 },
+  { name: "WAN NORLIZA BINTI WAN MANSOR", subjectCount: 3, sectionCount: 3, studentCount: 95 },
+  { name: "SYAFIQ BIN AZIZ", subjectCount: 4, sectionCount: 5, studentCount: 145 },
+  { name: "HAFIZ BIN KAMARUDIN", subjectCount: 3, sectionCount: 4, studentCount: 105 },
+  { name: "ZULKIFLI BIN RAHMAN", subjectCount: 4, sectionCount: 4, studentCount: 90 },
+  { name: "MAISARAH BINTI OTHMAN", subjectCount: 2, sectionCount: 2, studentCount: 65 },
+  { name: "NAJIHAH BINTI SULAIMAN", subjectCount: 3, sectionCount: 3, studentCount: 98 },
+  { name: "FADHLI BIN HASSAN", subjectCount: 5, sectionCount: 6, studentCount: 140 },
+  { name: "LATIFAH BINTI ABDUL GHANI", subjectCount: 2, sectionCount: 3, studentCount: 88 },
+  { name: "RIZAL BIN MOHAMAD", subjectCount: 4, sectionCount: 4, studentCount: 115 },
+  { name: "AZRINA BINTI YUSOF", subjectCount: 3, sectionCount: 2, studentCount: 75 },
+  { name: "FATIN FARHANA BINTI AZMI", subjectCount: 4, sectionCount: 3, studentCount: 100 },
+  { name: "IZWAN BIN HUSSEIN", subjectCount: 2, sectionCount: 2, studentCount: 67 },
+  { name: "SHARIFAH ZAINAB BINTI SYED", subjectCount: 3, sectionCount: 4, studentCount: 123 },
+  { name: "JULIANA BINTI MOHD SAID", subjectCount: 4, sectionCount: 4, studentCount: 94 },
+  { name: "ZAKARIA BIN MOHD YUNUS", subjectCount: 2, sectionCount: 2, studentCount: 58 },
+  { name: "MARIA BINTI RAZAK", subjectCount: 3, sectionCount: 3, studentCount: 101 },
+  { name: "SYAMIM BIN AZHAR", subjectCount: 4, sectionCount: 4, studentCount: 137 },
+  { name: "RAFIQ BIN SALLEH", subjectCount: 3, sectionCount: 3, studentCount: 82 }
 ]);
 
 const searchQuery = ref("");
-const itemsPerPage = 4;
+const itemsPerPage = 12;
 const currentPage = ref(1);
 
 const filteredLecturers = computed(() => {
-  return lecturers.value.filter(lect =>
-    lect.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+  return lecturers.value.filter(item =>
+    item.name.toLowerCase().includes(searchQuery.value.toLowerCase())
   );
 });
 
@@ -80,88 +67,67 @@ watch(searchQuery, () => {
 </script>
 
 <template>
-  <div class="bg-gray-100 min-h-screen flex flex-col justify-between pt-20">
+  <div class="bg-gray-50 min-h-screen pt-20">
     <Toggle titleBanner="Lecturer" />
 
-  <!-- SEARCH BAR LEFT-ALIGNED, SIMPLE BLACK BORDER -->
-<div class="flex justify-start px-4 py-4 max-w-6xl mx-auto">
-  <input
-    v-model="searchQuery"
-    placeholder="Search subject by code or name..."
-    class="border border-black px-4 py-2 rounded w-72 focus:outline-none"
-  />
-</div>
+    <!-- Search Bar Left -->
+    <div class="flex justify-start px-6 py-4 max-w-7xl mx-auto">
+      <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="Search lecturer name..."
+        class="border px-4 py-2 text-sm rounded shadow-sm w-full sm:w-72 focus:outline-none focus:ring-2 focus:ring-[#933b3b]"
+      />
+    </div>
 
-
-
-    <!-- MAIN CONTENT -->
-    <div class="flex-grow">
-      <!-- CARD UI SECTION -->
-      <div class="grid gap-4 px-4 py-2 max-w-6xl mx-auto grid-cols-1 md:grid-cols-2">
-        <div
-          v-for="(lecturer, index) in paginatedLecturers"
-          :key="(currentPage - 1) * itemsPerPage + index"
-          class="bg-white border border-gray-200 hover:shadow-lg rounded-xl p-4 transition space-y-2 relative"
-        >
-          <button
-            class="absolute top-3 right-3 rounded bg-gray-200 hover:bg-gray-300 p-2"
-            title="View Schedule Info"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <rect x="6" y="3" width="12" height="18" rx="2" stroke-width="2" />
-              <path d="M9 7h6M9 11h6M9 15h3" stroke-width="2" stroke-linecap="round" />
+    <!-- Cards -->
+    <div class="grid gap-6 px-6 pb-12 max-w-7xl mx-auto grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+      <div
+        v-for="(lecturer, index) in paginatedLecturers"
+        :key="index"
+        class="bg-white shadow border border-gray-200 rounded-xl px-6 py-5 flex flex-col gap-2"
+      >
+        <div class="flex items-center gap-2 text-sm text-[#933b3b] font-semibold">
+          <span class="text-yellow-500">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 inline-block" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
             </svg>
-          </button>
-
-          <div class="text-blue-700 font-bold text-lg">{{ lecturer.name }}</div>
-
-          <div class="flex flex-wrap gap-3 pt-2 text-sm text-gray-700">
-            <span class="bg-gray-100 px-2 py-0.5 rounded">Subjects: {{ lecturer.subjectCount }}</span>
-            <span class="bg-gray-100 px-2 py-0.5 rounded">Sections: {{ lecturer.sectionCount }}</span>
-            <span class="bg-gray-100 px-2 py-0.5 rounded">Students: {{ lecturer.studentCount }}</span>
-          </div>
+          </span>
+          {{ lecturer.name }}
         </div>
-
-        <div v-if="!paginatedLecturers.length" class="text-center text-gray-400 italic py-10 col-span-full">
-          No lecturers found.
+        <div class="flex flex-wrap gap-2 pt-2 text-sm text-gray-700">
+          <span class="bg-gray-100 px-2 py-1 rounded border text-xs flex items-center gap-1">
+            📚 Subjects: {{ lecturer.subjectCount }}
+          </span>
+          <span class="bg-gray-100 px-2 py-1 rounded border text-xs flex items-center gap-1">
+            🏠 Sections: {{ lecturer.sectionCount }}
+          </span>
+          <span class="bg-blue-100 px-2 py-1 rounded border text-xs flex items-center gap-1">
+            👨‍🎓 Students: {{ lecturer.studentCount }}
+          </span>
         </div>
+      </div>
+
+      <div v-if="!paginatedLecturers.length" class="text-center text-gray-400 italic py-10 col-span-full">
+        No lecturers found.
       </div>
     </div>
 
-    <!-- PAGINATION -->
-    <div class="flex justify-center items-center gap-2 py-6">
-      <button
-        @click="gotoPage(currentPage - 1)"
-        :disabled="currentPage === 1"
-        class="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 disabled:opacity-50 hover:bg-gray-200"
-      >
+    <!-- Pagination -->
+    <div class="flex justify-center items-center gap-2 py-4">
+      <button @click="gotoPage(currentPage - 1)" :disabled="currentPage === 1" class="px-2 py-1 text-sm rounded border bg-white shadow disabled:opacity-50">
         «
       </button>
-
-      <button
-        v-for="page in pageCount"
-        :key="page"
-        @click="gotoPage(page)"
-        :class="[
-          'w-8 h-8 flex items-center justify-center rounded-full',
-          currentPage === page
-            ? 'bg-[#933b3b] text-white font-semibold shadow'
-            : 'text-gray-800 hover:bg-gray-200'
-        ]"
-      >
-        {{ page }}
-      </button>
-
-      <button
-        @click="gotoPage(currentPage + 1)"
-        :disabled="currentPage === pageCount"
-        class="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 disabled:opacity-50 hover:bg-gray-200"
-      >
+      <span class="text-sm">Page</span>
+      <select v-model="currentPage" class="border text-sm rounded px-2 py-1">
+        <option v-for="p in pageCount" :key="p" :value="p">{{ p }}</option>
+      </select>
+      <span class="text-sm">of {{ pageCount }}</span>
+      <button @click="gotoPage(currentPage + 1)" :disabled="currentPage === pageCount" class="px-2 py-1 text-sm rounded border bg-white shadow disabled:opacity-50">
         »
       </button>
     </div>
-
-    <!-- FOOTER -->
+      <!-- Footer -->
     <p class="text-xs text-center px-4 pb-6 text-gray-600">
       If you have any comments or questions regarding this page, please contact
       <a href="mailto:ttms@fc.utm.my" class="text-blue-600">ttms@fc.utm.my</a>.<br />
@@ -169,3 +135,9 @@ watch(searchQuery, () => {
     </p>
   </div>
 </template>
+
+<style scoped>
+input::placeholder {
+  color: #999;
+}
+</style>
