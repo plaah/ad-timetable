@@ -1,8 +1,9 @@
 <script setup>
-import { ref, computed } from "vue";
-import Toggle from "@/components/Toggle.vue";
+import { ref, computed, onMounted } from "vue";
 import { userName, userMatric } from "@/constants/ApiConstants.js";
 import ProfileBanner from "@/components/ProfileBanner.vue";
+import Toggle from "@/components/Toggle.vue";
+import CurriculumApi from "@/api/CurriculumApi.js";
 
 const lsData = JSON.parse(localStorage.getItem("web.fc.utm.my_usersession"));
 if (lsData) {
@@ -10,116 +11,19 @@ if (lsData) {
   userMatric.value = lsData.login_name;
 }
 
-const curricula = ref([
-  {
-    name: "Bachelor of Computer Science (Software Engineering)",
-    sesi: "2020/2021",
-    semester: 1,
-    tahun: 1,
-    teras: 28,
-    elektif: 5,
-    jumlah: 33,
-  },
-  {
-    name: "Bachelor of Computer Science (Bioinformatics)",
-    sesi: "2019/2020",
-    semester: 2,
-    tahun: 2,
-    teras: 26,
-    elektif: 6,
-    jumlah: 32,
-  },
-  {
-    name: "Bachelor of Computer Science (Data Engineering)",
-    sesi: "2021/2022",
-    semester: 1,
-    tahun: 1,
-    teras: 30,
-    elektif: 4,
-    jumlah: 34,
-  },
-  {
-    name: "Bachelor of Computer Science (Network and Security)",
-    sesi: "2020/2021",
-    semester: 2,
-    tahun: 2,
-    teras: 29,
-    elektif: 3,
-    jumlah: 32,
-  },
-  {
-    name: "Bachelor of Computer Science (Artificial Intelligence)",
-    sesi: "2022/2023",
-    semester: 1,
-    tahun: 1,
-    teras: 27,
-    elektif: 6,
-    jumlah: 33,
-  },
-  {
-    name: "Bachelor of Computer Science (Multimedia)",
-    sesi: "2021/2022",
-    semester: 2,
-    tahun: 2,
-    teras: 30,
-    elektif: 5,
-    jumlah: 35,
-  },
-  {
-    name: "Bachelor of Computer Science (Block Chain)",
-    sesi: "2022/2023",
-    semester: 1,
-    tahun: 1,
-    teras: 26,
-    elektif: 6,
-    jumlah: 32,
-  },
-  {
-    name: "Bachelor of Computer Science (Machine Learning)",
-    sesi: "2021/2022",
-    semester: 2,
-    tahun: 2,
-    teras: 31,
-    elektif: 5,
-    jumlah: 36,
-  },
-  {
-    name: "Bachelor of Information Systems",
-    sesi: "2020/2021",
-    semester: 2,
-    tahun: 2,
-    teras: 27,
-    elektif: 7,
-    jumlah: 34,
-  },
-  {
-    name: "Bachelor of Software Technology",
-    sesi: "2021/2022",
-    semester: 1,
-    tahun: 1,
-    teras: 28,
-    elektif: 6,
-    jumlah: 34,
-  },
-  {
-    name: "Bachelor of Data Analytics",
-    sesi: "2019/2020",
-    semester: 2,
-    tahun: 2,
-    teras: 25,
-    elektif: 7,
-    jumlah: 32,
-  },
-  {
-    name: "Bachelor of Applied Computing",
-    sesi: "2022/2023",
-    semester: 1,
-    tahun: 1,
-    teras: 26,
-    elektif: 5,
-    jumlah: 31,
-  },
-]);
+const curricula = ref([]);
+const isLoading = ref(true);
+
+onMounted(async () => {
+  try {
+    const api = new CurriculumApi();
+    curricula.value = await api.getCurricula();
+  } catch (error) {
+    console.error("Failed to fetch curricula:", error);
+  } finally {
+    isLoading.value = false;
+  }
+});
 
 const currentPage = ref(1);
 const itemsPerPage = 6;
@@ -138,6 +42,22 @@ function gotoPage(page) {
   if (page > pageCount.value) page = pageCount.value;
   currentPage.value = page;
 }
+
+const electiveDetail = ref(null);
+const loadingElective = ref(false);
+
+async function showElective(id_kurikulum_subjek) {
+  loadingElective.value = true;
+  electiveDetail.value = null;
+  try {
+    const api = new CurriculumApi();
+    electiveDetail.value = await api.getElectiveDetails(id_kurikulum_subjek);
+  } catch (e) {
+    electiveDetail.value = { "s.nama_subjek": "Failed to load details." };
+  } finally {
+    loadingElective.value = false;
+  }
+}
 </script>
 
 <template>
@@ -153,6 +73,7 @@ function gotoPage(page) {
         <button
           class="absolute top-4 right-4 rounded bg-gray-100 hover:bg-gray-200 p-2"
           title="Schedule Info"
+          @click="showElective(item.id_kurikulum_subjek)"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <rect x="6" y="3" width="12" height="18" rx="2" stroke-width="2" />
@@ -171,7 +92,11 @@ function gotoPage(page) {
       </div>
     </div>
 
-    <div class="flex justify-center items-center space-x-2 py-6 mb-6">
+    <div v-if="isLoading" class="text-center py-6">
+      <p class="text-gray-600">Loading curriculum...</p>
+    </div>
+
+    <div v-else class="flex justify-center items-center space-x-2 py-6 mb-6">
       <button
         @click="gotoPage(currentPage - 1)"
         :disabled="currentPage === 1"
@@ -206,7 +131,7 @@ function gotoPage(page) {
       Copyright ©️ 2002–2025, Faculty of Computing, UTM
     </p>
   </div>
-</template>  
+</template>
 
 <style scoped>
 .min-h-screen {

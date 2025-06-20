@@ -1,5 +1,8 @@
 <template>
-  <div class="bg-gradient-to-b from-gray-50 to-white min-h-screen pt-20">
+  <div
+    class="bg-gradient-to-b from-gray-50 to-white min-h-screen pt-20 transition-all duration-300"
+    :class="{ 'pl-[72px]': isSidebarOpen }"
+  >
     <Toggle titleBanner="Timetable" />
 
     <!-- Greeting -->
@@ -33,7 +36,7 @@
     </div>
 
     <!-- DAILY VIEW -->
-    <div v-show="viewMode === 'daily'">
+    <div v-show="viewMode === 'daily'" class="relative">
       <div class="px-6 py-4 bg-white shadow rounded-xl mx-4 mt-6 relative overflow-visible">
         <!-- Session Filter -->
         <div class="flex justify-end">
@@ -45,16 +48,15 @@
           </select>
         </div>
 
-        <!-- Day Tabs: mobile scroll, desktop grid -->
-        <div class="mt-6 text-sm font-medium relative overflow-x-auto">
-          <div class="flex sm:grid sm:grid-cols-7 gap-2 min-w-[700px] sm:min-w-0">
+        <!-- Day Tabs -->
+        <div class="mt-6 text-sm font-medium relative overflow-x-auto px-2 sm:px-0 scrollbar-hide tab-wrapper">
+          <div class="flex sm:grid sm:grid-cols-7 gap-2 min-w-max sm:min-w-0">
             <div
               v-for="(day, i) in days"
               :key="i"
               class="relative text-center"
               :ref="el => dayRefs[i] = el"
             >
-              <!-- Day Button -->
               <div
                 @click="showPopupBelow(i)"
                 :class="selectedDay === i
@@ -68,12 +70,45 @@
           </div>
         </div>
       </div>
+
+      <!-- Popup Jadwal -->
+      <transition name="fade-slide">
+        <div
+          v-if="showPopup"
+          class="popup-panel absolute z-10"
+          :style="isMobile
+            ? { top: popupTop + 'px', left: '50%', transform: 'translateX(-50%)' }
+            : { top: popupTop + 'px', left: popupLeft + 'px', transform: 'translateX(-50%)' }"
+        >
+          <div v-if="daySchedule.length === 0" class="text-center text-gray-400 text-sm italic">
+            No classes scheduled on {{ days[selectedDay] }}.
+          </div>
+          <div v-else class="space-y-3">
+            <div
+              v-for="(item, index) in daySchedule"
+              :key="index"
+              class="p-3 border-l-4 rounded-md"
+              :class="item.color"
+            >
+              <div class="text-sm font-semibold text-[#933b3b]">
+                {{ item.time }} — {{ item.subjectName }}
+              </div>
+              <div class="text-xs text-gray-600">📘 {{ item.subject }}</div>
+              <div class="text-xs text-gray-500">Section: {{ item.section }}</div>
+              <div class="text-xs text-gray-500" v-if="item.room">📍 {{ item.room }}</div>
+            </div>
+          </div>
+        </div>
+      </transition>
     </div>
 
     <!-- WEEKLY VIEW -->
     <div v-show="viewMode === 'weekly'">
-      <div class="overflow-x-auto mt-4 px-4">
-        <div id="week-pdf" class="bg-white p-4 rounded-xl shadow min-w-[700px] sm:min-w-full">
+      <div class="overflow-x-auto mt-4 px-4 relative">
+        <div class="sm:hidden absolute -top-6 left-4 text-xs text-gray-400">
+          👈 Swipe to view full timetable
+        </div>
+        <div id="week-pdf" class="bg-white p-4 rounded-xl shadow min-w-[700px] sm:min-w-full overflow-auto sm:overflow-visible">
           <table class="w-full table-fixed border border-gray-300 rounded-xl text-sm text-left bg-white shadow">
             <thead class="bg-[#933b3b] text-white">
               <tr>
@@ -102,52 +137,22 @@
       </div>
     </div>
 
-    <!-- Global Popup -->
-    <teleport to="body">
-      <transition name="fade-slide">
-        <div
-          v-if="showPopup"
-          :style="{ position: 'absolute', top: popupTop + 'px', left: popupLeft + 'px' }"
-          class="bg-white border rounded-xl p-4 shadow-xl w-[300px] z-50"
-        >
-          <div v-if="daySchedule.length === 0" class="text-center text-gray-400 text-sm italic">
-            No classes scheduled on {{ days[selectedDay] }}.
-          </div>
-          <div v-else class="space-y-3">
-            <div
-              v-for="(item, index) in daySchedule"
-              :key="index"
-              class="p-3 border-l-4 rounded-md"
-              :class="item.color"
-            >
-              <div class="text-sm font-semibold text-[#933b3b]">
-                {{ item.time }} — {{ item.subjectName }}
-              </div>
-              <div class="text-xs text-gray-600">📘 {{ item.subject }}</div>
-              <div class="text-xs text-gray-500">Section: {{ item.section }}</div>
-              <div class="text-xs text-gray-500" v-if="item.room">📍 {{ item.room }}</div>
-            </div>
-          </div>
-        </div>
-      </transition>
-    </teleport>
+    <!-- Loading Spinner -->
+    <div v-if="isLoading" class="text-center text-gray-400 py-10">Loading timetable...</div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, computed, onMounted, watch, inject } from 'vue';
 import Toggle from '@/components/Toggle.vue';
 import StudentSubjectApi from '@/api/StudentSubjectApi';
 import TimetableApi from '@/api/TimetableApi';
 import { userMatric, userName } from '@/constants/ApiConstants';
 import { timetable, days } from '@/constants/TimeTableConstants';
 
-const viewMode = ref('daily');
-const switchView = (mode) => {
-  viewMode.value = mode;
-  if (mode !== 'daily') showPopup.value = false; // Hide popup when switching away from daily
-};
+const isSidebarOpen = inject('isSidebarOpen', false);
 
+const viewMode = ref('daily');
 const activeSession = ref('2024/2025 - 2');
 const selectedDay = ref(new Date().getDay());
 const sessionOptions = [
@@ -160,6 +165,9 @@ const showPopup = ref(false);
 const popupTop = ref(0);
 const popupLeft = ref(0);
 const dayRefs = ref([]);
+const windowWidth = ref(window.innerWidth);
+
+const isMobile = computed(() => windowWidth.value <= 768);
 
 const greeting = computed(() => {
   const hour = new Date().getHours();
@@ -186,6 +194,10 @@ onMounted(async () => {
   } finally {
     isLoading.value = false;
   }
+
+  window.addEventListener("resize", () => {
+    windowWidth.value = window.innerWidth;
+  });
 });
 
 const filteredSubjects = computed(() => {
@@ -254,24 +266,47 @@ watch(filteredSubjects, async (newSubs) => {
   }
 });
 
+function switchView(mode) {
+  viewMode.value = mode;
+  if (mode !== 'daily') showPopup.value = false;
+}
+
 function showPopupBelow(index) {
   if (selectedDay.value === index && showPopup.value) {
     showPopup.value = false;
     return;
   }
-  const el = dayRefs.value[index];
-  if (el) {
-    const rect = el.getBoundingClientRect();
-    popupTop.value = rect.bottom + window.scrollY + 30; // shifted further down
-    popupLeft.value = rect.left + rect.width / 2 - 150;
-    selectedDay.value = index;
-    showPopup.value = true;
+
+  selectedDay.value = index;
+  showPopup.value = true;
+
+  const tabWrapper = document.querySelector('.tab-wrapper');
+  const dayEl = dayRefs.value[index]?.$el ?? dayRefs.value[index];
+
+  if (dayEl && tabWrapper) {
+    const rect = dayEl.getBoundingClientRect();
+    const tabRect = tabWrapper.getBoundingClientRect();
+
+    if (isMobile.value) {
+      popupTop.value = tabRect.bottom + window.scrollY - 280;
+      popupLeft.value = window.innerWidth / 2;
+    } else {
+      popupTop.value = rect.bottom + window.scrollY -200;
+      popupLeft.value = rect.left + rect.width / 2;
+    }
   }
 }
 </script>
 
-
 <style scoped>
+.popup-panel {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  width: 300px;
+  transition: top 0.3s ease, left 0.3s ease;
+}
 .fade-slide-enter-active,
 .fade-slide-leave-active {
   transition: all 0.3s ease;
@@ -283,5 +318,12 @@ function showPopupBelow(index) {
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateY(-10px);
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 </style>
