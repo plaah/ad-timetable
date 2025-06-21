@@ -65,12 +65,11 @@ const clashList = ref([
 </script>
 
 <template>
-    <div class="bg-gray-100 min-h-screen">
+    <div class="bg-gray-100 min-h-screen pt-30">
         <Toggle />
 
         <!-- Banner -->
         <main>
-            <ProfileBanner titleBanner="Clash Pelajar" />
 
             <!-- Clash Table -->
             <div class="overflow-x-auto px-4 py-4">
@@ -149,6 +148,11 @@ const clashList = ref([
                 <button>&gt;&gt;</button>
             </div>
         </main>
-        <Footer />
+        <!-- Footer -->
+    <p class="text-xs text-center mt-6 px-4 text-gray-600">
+      If you have any comments or questions regarding this webpage, please contact
+      <a href="mailto:ttms@fc.utm.my" class="text-red-600">ttms@fc.utm.my</a>.<br />
+      &copy; 2002–2025, Faculty of Computing, UTM. All rights reserved.
+    </p>
     </div>
 </template>

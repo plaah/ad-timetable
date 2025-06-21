@@ -51,6 +51,12 @@
         </transition>
       </section>
     </main>
+    <!-- Footer -->
+    <p class="text-xs text-center mt-6 px-4 text-gray-600">
+      If you have any comments or questions regarding this webpage, please contact
+      <a href="mailto:ttms@fc.utm.my" class="text-red-600">ttms@fc.utm.my</a>.<br />
+      &copy; 2002–2025, Faculty of Computing, UTM. All rights reserved.
+    </p>
   </div>
 </template>
 
