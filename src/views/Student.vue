@@ -14,7 +14,6 @@ const loading = ref(true);
 const currentPage = ref(1);
 const itemsPerPage = 9;
 
-// Ambil session user dari localStorage
 const lsData = JSON.parse(localStorage.getItem("web.fc.utm.my_usersession"));
 if (lsData) {
   userName.value = lsData.full_name;
@@ -34,13 +33,16 @@ onMounted(async () => {
     const studentsData = await api.listStudents(adminSessionId, sesi, semester, 5);
 
     console.log("👩‍🎓 Students Fetched:", studentsData.length);
+    console.log("📋 Sample Student:", studentsData[0]);
 
     students.value = studentsData.map((student) => ({
       name: student.nama || "N/A",
-      yearCourse: `${student.tahun_kursus || "?"}/${student.kod_kursus || "?"}`,
+      yearCourse: student.tahun_kursus && student.kod_kursus
+        ? `${student.tahun_kursus}/${student.kod_kursus}`
+        : "N/A",
       faculty: student.kod_fakulti || "N/A",
-      subjectCount: 1,
-      credit: 3,
+      subjectCount: student.bil_subjek || 1,
+      credit: student.kredit || 3,
     }));
   } catch (err) {
     console.error("🔥 Failed to fetch students:", err.message);
@@ -49,9 +51,6 @@ onMounted(async () => {
   }
 });
 
-
-
-// Filtering
 const filteredStudents = computed(() => {
   return students.value.filter((student) => {
     const matchName = student.name.toLowerCase().includes(nama.value.toLowerCase());
@@ -61,12 +60,10 @@ const filteredStudents = computed(() => {
   });
 });
 
-// Reset halaman pas filter berubah
 watch([nama, tahun, kursus], () => {
   currentPage.value = 1;
 });
 
-// Pagination
 const totalPages = computed(() => Math.ceil(filteredStudents.value.length / itemsPerPage));
 const paginatedStudents = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
@@ -78,8 +75,6 @@ const goToPage = (page) => {
   }
 };
 </script>
-
-
 
 <template>
   <div class="bg-gray-50 min-h-screen pt-20 flex flex-col">
@@ -105,12 +100,12 @@ const goToPage = (page) => {
       </div>
     </div>
 
-    <div v-if="loading" class="text-center text-gray-500 py-10">Loading data mahasiswa...</div>
+    <div v-if="loading" class="text-center text-gray-500 py-10">Loading Student List...</div>
 
     <div v-else class="grid gap-6 px-6 py-6 max-w-7xl mx-auto grid-cols-1 md:grid-cols-2 xl:grid-cols-3 flex-grow">
       <div
-        v-for="(student, index) in paginatedStudents"
-        :key="index"
+        v-for="student in paginatedStudents"
+        :key="student.no_kp"
         class="bg-white rounded-xl shadow-md px-6 py-5 relative hover:shadow-lg transition"
       >
         <button class="absolute top-4 right-4 rounded bg-gray-100 hover:bg-gray-200 p-2" title="Maklumat Jadual">

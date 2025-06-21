@@ -7,6 +7,12 @@ import Subject from "@/views/Subject.vue";
 import Lecturer from "@/views/Lecturer.vue";
 import Student from "@/views/Student.vue";
 import Curriculum from "@/views/Curriculum.vue";
+import AnalysisSubject from "@/views/AnalysisSubject.vue";
+import AnalysisStudent from "@/views/AnalysisStudent.vue";
+import ClashLecture from "@/views/ClashLecture.vue";
+import ClashStudent from "@/views/ClashStudent.vue";
+import ClashVenue from "@/views/ClashVenue.vue";
+import TimeVenue from "@/views/TimeVenue.vue";
 
 const routes = [
   // Saat akses '/', redirect ke /login
@@ -61,6 +67,42 @@ const routes = [
     path: "/curriculum",
     name: "Curriculum",
     component: Curriculum,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/analysissubject",
+    name: "AnalysisSubject",
+    component: AnalysisSubject,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/analysisstudent",
+    name: "AnalysisStudent",
+    component: AnalysisStudent,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/clashlecture",
+    name: "ClashLecture",
+    component: ClashLecture,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/clashstudent",
+    name: "ClashStudent",
+    component: ClashStudent,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/clashvenue",
+    name: "ClashVenue",
+    component: ClashVenue,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/timevenue",
+    name: "TimeVenue",
+    component: TimeVenue,
     meta: { requiresAuth: true },
   },
 ];

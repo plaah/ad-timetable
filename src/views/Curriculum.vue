@@ -1,40 +1,196 @@
-<script setup>
-import { ref, computed, onMounted } from "vue";
-import { userName, userMatric } from "@/constants/ApiConstants.js";
-import ProfileBanner from "@/components/ProfileBanner.vue";
-import Toggle from "@/components/Toggle.vue";
-import CurriculumApi from "@/api/CurriculumApi.js";
+<template>
+  <div class="bg-gray-100 min-h-screen pt-20 font-[Segoe UI] text-[15px]">
+    <!-- Top Bar -->
+    <Toggle titleBanner="Curriculum" />
 
-const lsData = JSON.parse(localStorage.getItem("web.fc.utm.my_usersession"));
-if (lsData) {
-  userName.value = lsData.full_name;
-  userMatric.value = lsData.login_name;
-}
+    <!-- Filters & Pagination -->
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4 px-4 py-4 max-w-6xl mx-auto">
+      <!-- Search Bar -->
+      <div class="flex flex-wrap items-center gap-2">
+        <label class="font-normal">Search:</label>
+        <input
+          v-model="searchTerm"
+          placeholder="Search curriculum name or session..."
+          class="border border-gray-400 rounded px-3 py-1 w-72 shadow-sm"
+        />
+      </div>
+
+      <!-- Pagination -->
+      <div class="flex items-center gap-1 text-sm">
+        <button @click="gotoPage(1)" :disabled="currentPage === 1" class="px-2 py-1 border rounded">&laquo;</button>
+        <button @click="gotoPage(currentPage - 1)" :disabled="currentPage === 1" class="px-2 py-1 border rounded">&lt;</button>
+        <span>Page</span>
+        <select
+          v-model="currentPage"
+          @change="gotoPage(Number(currentPage))"
+          class="px-2 py-1 border rounded"
+        >
+          <option v-for="page in pageCount" :key="page" :value="page">{{ page }}</option>
+        </select>
+        <span>of {{ pageCount }}</span>
+        <button @click="gotoPage(currentPage + 1)" :disabled="currentPage === pageCount" class="px-2 py-1 border rounded">&gt;</button>
+        <button @click="gotoPage(pageCount)" :disabled="currentPage === pageCount" class="px-2 py-1 border rounded">&raquo;</button>
+      </div>
+    </div>
+
+    <!-- Curriculum Cards -->
+    <div class="grid gap-4 px-4 py-4 max-w-6xl mx-auto grid-cols-1 md:grid-cols-2">
+      <div
+        v-for="(curr, index) in paginatedCurricula"
+        :key="index"
+        class="bg-white border border-gray-200 hover:shadow-md rounded-xl p-4 space-y-3"
+      >
+        <div class="flex justify-between items-start">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">📘</span>
+            <span class="text-red-700 font-semibold text-lg">{{ curr.name }}</span>
+          </div>
+          <button
+            class="text-sm bg-gray-100 hover:bg-gray-200 rounded px-2 py-1"
+            @click="openModal(curr)"
+          >
+            View Details
+          </button>
+        </div>
+
+        <div class="text-gray-800 font-medium text-base">Session: {{ curr.sesi }} | Semester: {{ curr.semester }} | Year: {{ curr.tahun }}</div>
+
+        <div class="flex flex-wrap gap-2 text-sm mt-2">
+          <span class="flex items-center gap-1 bg-red-50 text-red-800 border border-red-200 px-2 py-1 rounded">
+            📚 Core: {{ getTerasCount(curr.id_kurikulum) }}
+          </span>
+          <span class="flex items-center gap-1 bg-blue-50 border border-blue-200 px-2 py-1 rounded">
+            🎯 Elective: {{ getElektifCount(curr.id_kurikulum) }}
+          </span>
+          <span class="flex items-center gap-1 bg-gray-100 border border-gray-300 px-2 py-1 rounded">
+            📊 Total: {{ getTotalCount(curr.id_kurikulum) }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Curriculum Modal -->
+    <div
+      v-if="showModal"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+    >
+      <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-2xl max-h-[90vh] relative flex flex-col">
+        <button
+          @click="closeModal"
+          class="absolute top-2 right-3 text-lg bg-gray-200 rounded-full px-2 py-1 hover:bg-gray-300 z-10"
+        >
+          ✕
+        </button>
+
+        <h3 class="font-bold text-xl mb-2 pr-10">
+          Subjects - {{ modalCurriculumName }}
+        </h3>
+
+        <div class="overflow-x-auto overflow-y-auto flex-1" style="max-height: 60vh">
+          <table class="w-full mb-4 text-sm">
+            <thead>
+              <tr class="border-b sticky top-0 bg-white z-5">
+                <th class="text-left p-2">Code</th>
+                <th class="text-left p-2">Name</th>
+                <th class="text-left p-2">Credit</th>
+                <th class="text-left p-2">Year</th>
+                <th class="text-left p-2">Semester</th>
+                <th class="text-left p-2">Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="subject in modalSubjects"
+                :key="subject.id_kurikulum_subjek"
+                class="border-b"
+              >
+                <td class="p-2">{{ subject.kod_subjek }}</td>
+                <td class="p-2">{{ subject.nama_subjek }}</td>
+                <td class="p-2">{{ subject.kredit }}</td>
+                <td class="p-2">{{ subject.tahun_ambil }}</td>
+                <td class="p-2">{{ subject.semester_ambil }}</td>
+                <td class="p-2">
+                  <span v-if="subject.mod_elektif">Elective</span>
+                  <span v-else>Core</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <p class="text-xs text-center mt-6 px-4 text-gray-600">
+      If you have any comments or questions regarding this webpage, please contact
+      <a href="mailto:ttms@fc.utm.my" class="text-red-600">ttms@fc.utm.my</a>.<br />
+      &copy; 2002–2025, Faculty of Computing, UTM. All rights reserved.
+    </p>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, computed, watch } from 'vue';
+import Toggle from '@/components/Toggle.vue';
+import CurriculumApi from '@/api/CurriculumApi';
 
 const curricula = ref([]);
-const isLoading = ref(true);
-
-onMounted(async () => {
-  try {
-    const api = new CurriculumApi();
-    curricula.value = await api.getCurricula();
-  } catch (error) {
-    console.error("Failed to fetch curricula:", error);
-  } finally {
-    isLoading.value = false;
-  }
-});
-
+const curriculumSubjects = ref({});
+const searchTerm = ref('');
 const currentPage = ref(1);
 const itemsPerPage = 6;
 
-const pageCount = computed(() => {
-  return Math.ceil(curricula.value.length / itemsPerPage) || 1;
+const modalSubjects = ref([]);
+const showModal = ref(false);
+const modalCurriculumName = ref('');
+
+onMounted(async () => {
+  const api = new CurriculumApi();
+  const sesiList = await api.getCurricula();
+
+  const cohortArrays = await Promise.all(
+    sesiList.map(item =>
+      api.getCohort(item.sesi_masuk).then(result => {
+        if (Array.isArray(result)) {
+          return result
+            .filter(cohort => cohort.nama_kurikulum && cohort.id_kurikulum)
+            .map(cohort => ({
+              name: cohort.nama_kurikulum,
+              sesi: cohort.sesi_masuk,
+              semester: cohort.semester_masuk,
+              tahun: cohort.tahun_masuk,
+              id_kurikulum: cohort.id_kurikulum
+            }));
+        } else {
+          return [];
+        }
+      })
+    )
+  );
+  curricula.value = cohortArrays.flat();
+
+  for (const curr of curricula.value) {
+    const subjects = await api.getSubjects(curr.id_kurikulum);
+    curriculumSubjects.value[curr.id_kurikulum] = Array.isArray(subjects) ? subjects : [subjects];
+  }
+});
+
+const filteredCurricula = computed(() => {
+  return curricula.value.filter(item => {
+    return (
+      item.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
+      item.sesi?.toLowerCase().includes(searchTerm.value.toLowerCase())
+    );
+  });
 });
 
 const paginatedCurricula = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
-  return curricula.value.slice(start, start + itemsPerPage);
+  return filteredCurricula.value.slice(start, start + itemsPerPage);
+});
+
+const pageCount = computed(() => {
+  return Math.ceil(filteredCurricula.value.length / itemsPerPage) || 1;
 });
 
 function gotoPage(page) {
@@ -43,99 +199,34 @@ function gotoPage(page) {
   currentPage.value = page;
 }
 
-const electiveDetail = ref(null);
-const loadingElective = ref(false);
+watch(searchTerm, () => {
+  currentPage.value = 1;
+});
 
-async function showElective(id_kurikulum_subjek) {
-  loadingElective.value = true;
-  electiveDetail.value = null;
-  try {
-    const api = new CurriculumApi();
-    electiveDetail.value = await api.getElectiveDetails(id_kurikulum_subjek);
-  } catch (e) {
-    electiveDetail.value = { "s.nama_subjek": "Failed to load details." };
-  } finally {
-    loadingElective.value = false;
-  }
+function getTerasCount(id) {
+  return (curriculumSubjects.value[id] || []).filter(s => !s.mod_elektif).length;
+}
+function getElektifCount(id) {
+  return (curriculumSubjects.value[id] || []).filter(s => s.mod_elektif).length;
+}
+function getTotalCount(id) {
+  return (curriculumSubjects.value[id] || []).length;
+}
+
+function openModal(curriculum) {
+  modalCurriculumName.value = curriculum.name;
+  modalSubjects.value = curriculumSubjects.value[curriculum.id_kurikulum] || [];
+  showModal.value = true;
+}
+
+function closeModal() {
+  showModal.value = false;
 }
 </script>
 
-<template>
-  <div class="bg-gray-50 min-h-screen pt-20 flex flex-col">
-    <Toggle ProfileBanner titleBanner="Curriculum" />
-
-    <div class="grid gap-6 px-6 py-6 max-w-7xl mx-auto grid-cols-1 md:grid-cols-2 xl:grid-cols-3 flex-grow">
-      <div
-        v-for="(item, index) in paginatedCurricula"
-        :key="index"
-        class="bg-white rounded-xl shadow-md px-6 py-5 relative hover:shadow-lg transition"
-      >
-        <button
-          class="absolute top-4 right-4 rounded bg-gray-100 hover:bg-gray-200 p-2"
-          title="Schedule Info"
-          @click="showElective(item.id_kurikulum_subjek)"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <rect x="6" y="3" width="12" height="18" rx="2" stroke-width="2" />
-            <path d="M9 7h6M9 11h6M9 15h3" stroke-width="2" stroke-linecap="round" />
-          </svg>
-        </button>
-        <div class="font-semibold text-base text-[#933b3b] mb-1">
-          {{ item.name }}
-        </div>
-        <div class="text-gray-700 mb-2 text-sm">Session: {{ item.sesi }} | Semester: {{ item.semester }} | Year: {{ item.tahun }}</div>
-        <div class="flex flex-wrap gap-2 text-gray-600 text-sm">
-          <span class="bg-gray-100 px-2 py-1 rounded border text-xs">📚 Core: {{ item.teras }}</span>
-          <span class="bg-gray-100 px-2 py-1 rounded border text-xs">🎯 Electives: {{ item.elektif }}</span>
-          <span class="bg-blue-100 px-2 py-1 rounded border text-xs">📊 Total: {{ item.jumlah }}</span>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="isLoading" class="text-center py-6">
-      <p class="text-gray-600">Loading curriculum...</p>
-    </div>
-
-    <div v-else class="flex justify-center items-center space-x-2 py-6 mb-6">
-      <button
-        @click="gotoPage(currentPage - 1)"
-        :disabled="currentPage === 1"
-        class="px-3 py-1 rounded-full bg-gray-200 hover:bg-gray-300 text-sm disabled:opacity-50"
-      >
-        «
-      </button>
-      <button
-        v-for="page in pageCount"
-        :key="page"
-        @click="gotoPage(page)"
-        class="px-3 py-1 rounded-full text-sm"
-        :class="{
-          'bg-[#933b3b] text-white font-semibold shadow': currentPage === page,
-          'bg-gray-100 hover:bg-gray-300': currentPage !== page
-        }"
-      >
-        {{ page }}
-      </button>
-      <button
-        @click="gotoPage(currentPage + 1)"
-        :disabled="currentPage === pageCount"
-        class="px-3 py-1 rounded-full bg-gray-200 hover:bg-gray-300 text-sm disabled:opacity-50"
-      >
-        »
-      </button>
-    </div>
-
-    <p class="text-xs text-center px-4 pb-6 text-gray-600">
-      If you have any comments or inquiries regarding this webpage, please contact the webmaster at
-      <a href="mailto:ttms@fc.utm.my" class="text-blue-600">ttms@fc.utm.my</a><br />
-      Copyright ©️ 2002–2025, Faculty of Computing, UTM
-    </p>
-  </div>
-</template>
-
 <style scoped>
-.min-h-screen {
-  display: flex;
-  flex-direction: column;
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 15px;
 }
 </style>
