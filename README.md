@@ -15,7 +15,3 @@ This is a modern Vue 3 + Vite application developed and maintained by **Group St
 ### Install dependencies
 ```bash
 npm install
-
-### Run Project
-```bash
-npm run dev
