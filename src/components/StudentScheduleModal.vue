@@ -6,50 +6,79 @@
     <div
       class="bg-white w-full max-w-6xl rounded-xl p-6 shadow-xl max-h-[90vh] overflow-y-auto pointer-events-auto"
     >
+      <!-- Header -->
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-semibold text-[#933b3b]">📅 Timetable: {{ studentName }}</h2>
-        <button @click="closeModal" class="text-red-600 font-bold text-lg hover:scale-110">&times;</button>
+        <h2 class="text-xl font-semibold text-[#933b3b]">
+          📅 Timetable: {{ studentName }}
+        </h2>
+        <button
+          @click="closeModal"
+          class="text-red-600 font-bold text-lg hover:scale-110"
+        >
+          &times;
+        </button>
       </div>
 
-      <div v-if="loading" class="text-center text-gray-500 py-6">Loading timetable...</div>
+      <!-- Loading -->
+      <div v-if="loading" class="text-center text-gray-500 py-6">
+        Loading timetable...
+      </div>
 
+      <!-- Table: Schedule -->
       <div v-else-if="groupedSlots">
-        <table class="w-full border text-sm table-fixed">
-          <thead>
-            <tr class="bg-[#933b3b] text-white text-center">
-              <th class="w-[90px] py-2">Time</th>
-              <th v-for="day in days" :key="day" class="py-2">{{ day }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="slot in timeSlots" :key="slot">
-              <td class="text-center border px-2 py-1 font-semibold">{{ slot }}</td>
-              <td
-                v-for="day in days"
-                :key="day + slot"
-                class="border px-2 py-1 align-top"
-              >
-                <div
-                  v-for="item in groupedSlots[day][slot]"
-                  :key="item.kod_subjek + item.masa + item.hari"
-                  class="bg-gray-100 border border-gray-300 rounded mb-1 p-1 text-xs leading-tight"
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[700px] border text-xs sm:text-sm table-fixed">
+            <thead>
+              <tr class="bg-[#933b3b] text-white text-center">
+                <th class="w-[90px] py-2">Time</th>
+                <th
+                  v-for="day in days"
+                  :key="day"
+                  class="py-2 px-1 sm:px-2"
                 >
-                  <strong>{{ item.kod_subjek }}</strong><br />
-                  Section: {{ item.seksyen }}<br />
-                  {{ item.nama_bilik || 'Room: N/A' }}
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                  {{ day }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="slot in timeSlots" :key="slot">
+                <td class="text-center border px-1 sm:px-2 py-1 font-semibold">
+                  {{ slot }}
+                </td>
+                <td
+                  v-for="day in days"
+                  :key="day + slot"
+                  class="border px-1 sm:px-2 py-1 align-top"
+                >
+                  <div
+                    v-for="item in groupedSlots[day][slot]"
+                    :key="item.kod_subjek + item.masa + item.hari"
+                    class="bg-gray-100 border border-gray-300 rounded mb-1 p-1 text-[10px] sm:text-xs leading-tight"
+                  >
+                    <strong>{{ item.kod_subjek }}</strong><br />
+                    Section: {{ item.seksyen }}<br />
+                    {{ item.nama_bilik || 'Room: N/A' }}
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Optional: scroll hint -->
+        <p class="text-gray-400 text-[10px] mt-2 sm:hidden text-center italic">
+          Scroll sideways to view more →
+        </p>
       </div>
 
+      <!-- No Data -->
       <div v-else class="text-center text-gray-400 py-6 italic">
         No timetable data available.
       </div>
     </div>
   </div>
 </template>
+
 
 <script setup>
 import { ref, watch } from 'vue'

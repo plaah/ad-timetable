@@ -27,8 +27,8 @@
   >
     <div class="sidebar-header">
       <h2 v-if="!isCollapsed" class="text-lg font-bold">Menu</h2>
-      <button @click="toggleCollapse" class="expand-btn">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="#933b3b">
+      <button @click="toggleCollapse" class="expand-btn" :class="{ rotated: !isCollapsed }">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 transform transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="#933b3b">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
         </svg>
       </button>
@@ -54,7 +54,7 @@
       </div>
 
       <!-- Analysis Dropdown -->
-      <div class="nav-link" @click="toggleAnalysisDropdown" ref="analysisDropdown">
+      <div class="nav-link" @click="toggleAnalysisDropdown">
         <AppIcon name="analysis" />
         <template v-if="!isCollapsed">
           <transition name="fade">
@@ -79,32 +79,34 @@
           />
         </svg>
       </div>
-      <div v-if="isAnalysisDropdownOpen" class="analysis-dropdown">
-        <div class="dropdown-item" @click="loadMasaruang">
-          <AppIcon name="masaruang" />
-          <span class="link-text">Time Venue</span>
+      <transition name="fade">
+        <div v-if="isAnalysisDropdownOpen && !isCollapsed" class="analysis-dropdown">
+          <div class="dropdown-item" @click="loadMasaruang">
+            <AppIcon name="masaruang" />
+            <span class="link-text">Time Venue</span>
+          </div>
+          <div class="dropdown-item" @click="loadAnalysisSubjek">
+            <AppIcon name="analysissubjek" />
+            <span class="link-text">Analysis Subject</span>
+          </div>
+          <div class="dropdown-item" @click="loadAnalysisPelajar">
+            <AppIcon name="analysisstudent" />
+            <span class="link-text">Analysis Student</span>
+          </div>
+          <div class="dropdown-item" @click="loadClashRuang">
+            <AppIcon name="clashvenue" />
+            <span class="link-text">Clash Venue</span>
+          </div>
+          <div class="dropdown-item" @click="loadClashPensyarah">
+            <AppIcon name="clashlecture" />
+            <span class="link-text">Clash Lecture</span>
+          </div>
+          <div class="dropdown-item" @click="loadClashPelajar">
+            <AppIcon name="clashstudent" />
+            <span class="link-text">Clash Student</span>
+          </div>
         </div>
-        <div class="dropdown-item" @click="loadAnalysisSubjek">
-          <AppIcon name="analysissubjek" />
-          <span class="link-text">Analysis Subject</span>
-        </div>
-        <div class="dropdown-item" @click="loadAnalysisPelajar">
-          <AppIcon name="analysisstudent" />
-          <span class="link-text">Analysis Student</span>
-        </div>
-        <div class="dropdown-item" @click="loadClashRuang">
-          <AppIcon name="clashvenue" />
-          <span class="link-text">Clash Vunue</span>
-        </div>
-        <div class="dropdown-item" @click="loadClashPensyarah">
-          <AppIcon name="clashlecture" />
-          <span class="link-text">Clash Lecture</span>
-        </div>
-        <div class="dropdown-item" @click="loadClashPelajar">
-          <AppIcon name="clashstudent" />
-          <span class="link-text">Clash Student</span>
-        </div>
-      </div>
+      </transition>
 
       <div class="nav-link" @click="logout">
         <AppIcon name="logout" />
@@ -195,27 +197,22 @@ const loadMasaruang = () => {
   toggleSidebar();
   window.location.href = "/TimeVenue";
 };
-
 const loadAnalysisSubjek = () => {
   toggleSidebar();
   window.location.href = "/AnalysisSubject";
 };
-
 const loadAnalysisPelajar = () => {
   toggleSidebar();
   window.location.href = "/AnalysisStudent";
 };
-
 const loadClashRuang = () => {
   toggleSidebar();
   window.location.href = "/ClashVenue";
 };
-
 const loadClashPensyarah = () => {
   toggleSidebar();
   window.location.href = "/ClashLecture";
 };
-
 const loadClashPelajar = () => {
   toggleSidebar();
   window.location.href = "/ClashStudent";
@@ -225,7 +222,6 @@ const toggleSidebar = () => {
   sidebarVisible.value = !sidebarVisible.value;
 };
 
-// Optional: ESC to close sidebar
 const handleKeydown = (e) => {
   if (e.key === "Escape") closeSidebar();
 };
@@ -298,8 +294,8 @@ onBeforeUnmount(() => {
   cursor: pointer;
   transition: transform 0.3s ease;
 }
-.expand-btn:hover {
-  transform: scale(1.2);
+.expand-btn.rotated svg {
+  transform: rotate(180deg);
 }
 
 .nav-links {
@@ -370,11 +366,17 @@ onBeforeUnmount(() => {
   border-radius: 10px;
   margin-top: 10px;
   padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 .dropdown-item {
   color: white;
   padding: 8px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   transition: background-color 0.2s ease;
 }
 .dropdown-item:hover {

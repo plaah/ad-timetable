@@ -2,48 +2,54 @@
 import { ref, watch, computed, onMounted } from "vue";
 import TimeVenueApi from "@/api/TimeVenueApi";
 import { days, timetable } from "@/constants/TimetableConstants";
+import { useRoute, useRouter } from "vue-router";
 
-const props = defineProps({
-    roomCode: String,
-    show: Boolean,
-    onClose: Function,
-});
+const route = useRoute();
+const router = useRouter();
 
+const roomCode = route.query.roomCode || ""; // dari URL ?roomCode=XXX
 const sesiOptions = ["2024/2025", "2023/2024"];
 const selectedSesi = ref("2024/2025");
 const selectedSemester = ref(1);
 const selectedDay = ref(0);
-
 const entries = ref([]);
-const jadualRuangApi = new JadualRuangApi();
+const show = ref(true);
+
+const jadualRuangApi = new TimeVenueApi();
 
 async function fetchTimetable() {
-    if (!props.roomCode) return;
-    try {
-        const data = await jadualRuangApi.fetchByRoom(
-            selectedSesi.value,
-            selectedSemester.value,
-            props.roomCode
-        );
-        entries.value = Array.isArray(data) ? data : [];
-    } catch (err) {
-        console.error("Failed to fetch timetable:", err);
-        entries.value = [];
-    }
+  if (!roomCode) return;
+  try {
+    const data = await jadualRuangApi.fetchByRoom(
+      selectedSesi.value,
+      selectedSemester.value,
+      roomCode
+    );
+    console.log("✅ Data fetched:", data);
+    entries.value = Array.isArray(data) ? data : [];
+  } catch (err) {
+    console.error("Failed to fetch timetable:", err);
+    entries.value = [];
+  }
 }
 
 onMounted(fetchTimetable);
-watch([selectedSesi, selectedSemester, () => props.roomCode], fetchTimetable);
+watch([selectedSesi, selectedSemester], fetchTimetable);
 
 const filteredEntries = computed(() =>
-    entries.value.filter((e) => e.hari === selectedDay.value + 1)
+  entries.value.filter((e) => e.hari === selectedDay.value + 1)
 );
 
 function getTime(masa) {
-    const row = timetable.find((t) => t.masa === masa);
-    return row ? row.waktu : "";
+  const row = timetable.find((t) => t.masa === masa);
+  return row ? row.waktu : "";
+}
+
+function closePage() {
+  router.push("/venue"); // atau halaman mana aja
 }
 </script>
+
 
 <template>
     <div

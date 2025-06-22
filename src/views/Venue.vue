@@ -1,10 +1,11 @@
 <script setup>
 import { ref, watch, onMounted, computed } from "vue";
 import Toggle from "@/components/Toggle.vue";
-import ProfileBanner from "@/components/ProfileBanner.vue";
 import VenueApi from "@/api/VenueApi";
-import { userInfo, userName, userMatric } from "@/constants/ApiConstants.js";
+import VenueScheduleModal from "@/components/VenueScheduleModal.vue";
+import { userName, userMatric } from "@/constants/ApiConstants.js";
 
+// Load user session if available
 const lsData = JSON.parse(localStorage.getItem("web.fc.utm.my_usersession"));
 if (lsData) {
   userName.value = lsData.full_name;
@@ -19,6 +20,11 @@ const currentPage = ref(1);
 const itemsPerPage = 10;
 const searchQuery = ref("");
 
+// Modal state
+const showModal = ref(false);
+const selectedRoom = ref(null);
+
+// Normalize room object
 const formatRoomData = (room) => ({
   code: room.kod_ruang,
   name: room.nama_ruang,
@@ -28,6 +34,7 @@ const formatRoomData = (room) => ({
   capacity: room.kapasiti,
 });
 
+// Fetch room data by faculty
 const fetchRooms = async () => {
   try {
     error.value = null;
@@ -44,6 +51,7 @@ watch([selectedFaculty], fetchRooms);
 watch([searchQuery], () => (currentPage.value = 1));
 onMounted(fetchRooms);
 
+// Filtered and paginated room list
 const filteredRooms = computed(() => {
   return rooms.value.filter((room) =>
     room.code.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
@@ -56,11 +64,18 @@ const paginatedRooms = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
   return filteredRooms.value.slice(start, start + itemsPerPage);
 });
+
 const setPage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page;
   }
 };
+
+// Show modal with selected room
+function openModal(room) {
+  selectedRoom.value = room;
+  showModal.value = true;
+}
 </script>
 
 <template>
@@ -88,11 +103,7 @@ const setPage = (page) => {
         <button @click="setPage(1)" :disabled="currentPage === 1" class="px-2 py-1 border rounded">&laquo;</button>
         <button @click="setPage(currentPage - 1)" :disabled="currentPage === 1" class="px-2 py-1 border rounded">&lt;</button>
         <span>Page</span>
-        <select
-          v-model="currentPage"
-          @change="setPage(Number(currentPage))"
-          class="px-2 py-1 border rounded"
-        >
+        <select v-model="currentPage" @change="setPage(Number(currentPage))" class="px-2 py-1 border rounded">
           <option v-for="page in totalPages" :key="page" :value="page">{{ page }}</option>
         </select>
         <span>of {{ totalPages }}</span>
@@ -111,7 +122,8 @@ const setPage = (page) => {
       <div
         v-for="(room, index) in paginatedRooms"
         :key="index"
-        class="bg-white border border-red-200 hover:shadow-md rounded-xl transition p-4 space-y-2"
+        class="bg-white border border-red-200 hover:shadow-md rounded-xl transition p-4 space-y-2 cursor-pointer"
+        @click="openModal(room)"
       >
         <div class="flex justify-between items-start">
           <div class="flex items-center gap-2">
@@ -145,6 +157,14 @@ const setPage = (page) => {
         </div>
       </div>
     </div>
+
+    <!-- Modal -->
+    <VenueScheduleModal
+      v-if="showModal"
+      :room="selectedRoom"
+      :show="showModal"
+      @update:show="showModal = $event"
+    />
 
     <!-- Footer -->
     <p class="text-xs text-center mt-6 px-4 text-gray-600">
