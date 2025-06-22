@@ -1,34 +1,18 @@
 export default class BaseApi {
-  constructor() {
-    this.baseUrl = "http://web.fc.utm.my/ttms/web_man_webservice_json.cgi";
-    this.adminAuthURL = "http://web.fc.utm.my/ttms/auth-admin.php";
-    this.cache = {}; // simple in-memory cache
-  }
-
-  async get(params) {
-    const query = new URLSearchParams(params).toString();
-    const url = `${this.baseUrl}?${query}`;
-
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch");
+    constructor() {
+        this.baseUrl = "http://web.fc.utm.my/ttms/web_man_webservice_json.cgi";
     }
 
-    return await response.json();
-  }
+    async get(params) {
+        const query = new URLSearchParams(params).toString();
+        const url = `${this.baseUrl}?${query}`;
 
-  getCache(key) {
-    return this.cache[key];
-  }
+        const response = await fetch(url);
 
-  setCache(key, value) {
-    this.cache[key] = value;
-  }
+        if (!response.ok) {
+            throw new Error("Failed to fetch");
+        }
 
-  async fetchJSON(url) {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error("Failed to fetch");
-    return await response.json();
-  }
+        return await response.json();
+    }
 }

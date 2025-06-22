@@ -1,163 +1,174 @@
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
 import Toggle from "@/components/Toggle.vue";
+import StudentScheduleModal from "@/components/StudentScheduleModal.vue";
+import {
+  fetchCurrentSession,
+  fetchAdminSession,
+  fetchStudents
+} from "@/api/StudentApi.js";
 import { userName, userMatric } from "@/constants/ApiConstants.js";
-import StudentApi from "@/api/StudentApi.js";
 
-const api = new StudentApi();
-
-const nama = ref("");
-const tahun = ref("");
-const kursus = ref("");
-const students = ref([]);
-const loading = ref(true);
-const currentPage = ref(1);
-const itemsPerPage = 9;
-
+// Ambil data dari localStorage
 const lsData = JSON.parse(localStorage.getItem("web.fc.utm.my_usersession"));
 if (lsData) {
   userName.value = lsData.full_name;
   userMatric.value = lsData.login_name;
 }
 
-onMounted(async () => {
+// States
+const students = ref([]);
+const searchQuery = ref("");
+const itemsPerPage = 10;
+const currentPage = ref(1);
+const loading = ref(false);
+
+// Modal
+const showModal = ref(false);
+const selectedStudent = ref({ name: "", matric: "" });
+
+function openSchedule(student) {
+  selectedStudent.value = student;
+  showModal.value = true;
+}
+
+// Load daftar mahasiswa dari API
+async function loadStudents() {
+  loading.value = true;
   try {
-    if (!lsData?.session_id) throw new Error("❌ No user session ID");
+    if (!lsData?.session_id) throw new Error("Session ID not found");
 
-    const [{ sesi, semester }] = await api.getCurrentPeriod();
-    console.log("📆 Current Period:", sesi, semester);
+    const session = await fetchCurrentSession();
+    const admin = await fetchAdminSession(lsData.session_id);
 
-    const adminSessionId = await api.getAdminSession(lsData.session_id);
-    console.log("🧑‍💼 Admin Session ID:", adminSessionId);
+    const data = await fetchStudents(admin.session_id, session.sesi, session.semester);
 
-    const studentsData = await api.listStudents(adminSessionId, sesi, semester, 5);
-
-    console.log("👩‍🎓 Students Fetched:", studentsData.length);
-    console.log("📋 Sample Student:", studentsData[0]);
-
-    students.value = studentsData.map((student) => ({
-      name: student.nama || "N/A",
-      yearCourse: student.tahun_kursus && student.kod_kursus
-        ? `${student.tahun_kursus}/${student.kod_kursus}`
-        : "N/A",
-      faculty: student.kod_fakulti || "N/A",
-      subjectCount: student.bil_subjek || 1,
-      credit: student.kredit || 3,
+    students.value = data.map(std => ({
+      name: std.nama,
+      matric: std.no_matrik,
+      course: std.kod_kursus
     }));
-  } catch (err) {
-    console.error("🔥 Failed to fetch students:", err.message);
+  } catch (e) {
+    console.error("Failed to load students:", e);
   } finally {
     loading.value = false;
   }
+}
+
+onMounted(() => {
+  loadStudents();
 });
 
+// Pagination & Search
 const filteredStudents = computed(() => {
-  return students.value.filter((student) => {
-    const matchName = student.name.toLowerCase().includes(nama.value.toLowerCase());
-    const matchYear = tahun.value ? student.yearCourse.startsWith(tahun.value) : true;
-    const matchCourse = kursus.value ? student.yearCourse.includes(kursus.value.toUpperCase()) : true;
-    return matchName && matchYear && matchCourse;
-  });
+  return students.value.filter(std =>
+    std.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+  );
 });
 
-watch([nama, tahun, kursus], () => {
-  currentPage.value = 1;
-});
-
-const totalPages = computed(() => Math.ceil(filteredStudents.value.length / itemsPerPage));
 const paginatedStudents = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
   return filteredStudents.value.slice(start, start + itemsPerPage);
 });
-const goToPage = (page) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page;
-  }
-};
+
+const pageCount = computed(() => {
+  return Math.ceil(filteredStudents.value.length / itemsPerPage) || 1;
+});
+
+function gotoPage(page) {
+  if (page < 1) page = 1;
+  if (page > pageCount.value) page = pageCount.value;
+  currentPage.value = page;
+}
+
+watch(searchQuery, () => {
+  currentPage.value = 1;
+});
 </script>
 
 <template>
-  <div class="bg-gray-50 min-h-screen pt-20 flex flex-col">
+  <div class="bg-gray-100 min-h-screen pt-20 font-[Segoe UI] text-[15px]">
     <Toggle titleBanner="Student" />
 
-    <div class="px-6 pt-4 pb-2 max-w-7xl mx-auto w-full">
-      <div class="flex flex-wrap gap-4 items-end">
-        <div class="flex flex-col">
-          <label class="text-xs mb-1 ml-1">Nama</label>
-          <input v-model="nama" type="text" placeholder="Cari nama" class="border px-3 py-1.5 rounded-md text-sm w-44 focus:outline-none focus:ring-2 focus:ring-[#933b3b]" />
-        </div>
-        <div class="flex flex-col">
-          <label class="text-xs mb-1 ml-1">Tahun</label>
-          <input v-model="tahun" type="text" placeholder="Contoh: 2" class="border px-3 py-1.5 rounded-md text-sm w-28 focus:outline-none focus:ring-2 focus:ring-[#933b3b]" />
-        </div>
-        <div class="flex flex-col">
-          <label class="text-xs mb-1 ml-1">Kursus</label>
-          <input v-model="kursus" type="text" placeholder="Contoh: SECJH" class="border px-3 py-1.5 rounded-md text-sm w-32 focus:outline-none focus:ring-2 focus:ring-[#933b3b]" />
-        </div>
-        <button class="bg-[#933b3b] text-white px-4 py-1.5 rounded-md text-sm hover:bg-gray-800">
-          🔍 Cari
-        </button>
+    <!-- Search & Pagination Row -->
+    <div class="flex flex-col md:flex-row justify-between items-start gap-4 px-4 py-4 max-w-6xl mx-auto w-full">
+      <!-- Search -->
+      <div class="flex flex-wrap items-center gap-2 w-full md:w-auto pl-2">
+        <label class="font-normal">Search:</label>
+        <input
+          v-model="searchQuery"
+          placeholder="Search by student name..."
+          class="border border-gray-400 rounded px-3 py-1 w-72 shadow-sm"
+        />
+      </div>
+
+      <!-- Pagination -->
+      <div class="flex items-center gap-1 text-sm font-[Segoe UI] pr-2 md:ml-auto">
+        <button @click="gotoPage(1)" :disabled="currentPage === 1" class="px-2 py-1 border rounded">&laquo;</button>
+        <button @click="gotoPage(currentPage - 1)" :disabled="currentPage === 1" class="px-2 py-1 border rounded">&lt;</button>
+        <span>Page</span>
+        <select
+          v-model="currentPage"
+          @change="gotoPage(Number(currentPage))"
+          class="px-2 py-1 border rounded"
+        >
+          <option v-for="page in pageCount" :key="page" :value="page">{{ page }}</option>
+        </select>
+        <span>of {{ pageCount }}</span>
+        <button @click="gotoPage(currentPage + 1)" :disabled="currentPage === pageCount" class="px-2 py-1 border rounded">&gt;</button>
+        <button @click="gotoPage(pageCount)" :disabled="currentPage === pageCount" class="px-2 py-1 border rounded">&raquo;</button>
       </div>
     </div>
 
+    <!-- Loading -->
     <div v-if="loading" class="text-center text-gray-500 py-10">Loading Student List...</div>
 
-    <div v-else class="grid gap-6 px-6 py-6 max-w-7xl mx-auto grid-cols-1 md:grid-cols-2 xl:grid-cols-3 flex-grow">
+    <!-- Student Cards -->
+    <div class="grid gap-4 px-4 py-4 max-w-6xl mx-auto grid-cols-1 md:grid-cols-2">
       <div
         v-for="student in paginatedStudents"
-        :key="student.no_kp"
-        class="bg-white rounded-xl shadow-md px-6 py-5 relative hover:shadow-lg transition"
+        :key="student.matric"
+        class="bg-white border border-gray-200 hover:shadow-md rounded-xl p-4 flex flex-col justify-between min-h-[135px]"
       >
-        <button class="absolute top-4 right-4 rounded bg-gray-100 hover:bg-gray-200 p-2" title="Maklumat Jadual">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <rect x="6" y="3" width="12" height="18" rx="2" stroke-width="2" />
-            <path d="M9 7h6M9 11h6M9 15h3" stroke-width="2" stroke-linecap="round" />
-          </svg>
-        </button>
-        <div class="font-semibold text-base text-[#933b3b] mb-1">{{ student.name }}</div>
-        <div class="text-gray-700 mb-2 text-sm">Tahun/Kursus: {{ student.yearCourse }}</div>
-        <div class="flex flex-wrap gap-2 text-gray-600 text-sm">
-          <span class="bg-gray-100 px-2 py-1 rounded border text-xs">🏫 Faculty: {{ student.faculty }}</span>
-          <span class="bg-gray-100 px-2 py-1 rounded border text-xs">📘 Subjects: {{ student.subjectCount }}</span>
-          <span class="bg-blue-100 px-2 py-1 rounded border text-xs">🎓 Credits: {{ student.credit }}</span>
+        <div>
+          <!-- Klik nama untuk buka modal -->
+          <div
+            @click="openSchedule(student)"
+            class="cursor-pointer hover:underline text-[#933b3b] font-semibold text-base mb-1"
+          >
+            🎓 {{ student.name }}
+          </div>
+          <div class="text-gray-800 mb-2 text-sm">Matric: <strong>{{ student.matric }}</strong></div>
         </div>
+        <div class="flex gap-2 mt-2 text-sm">
+          <span class="flex items-center gap-1 bg-purple-100 text-gray-800 border border-purple-200 px-2 py-1 rounded">
+            🆔 {{ student.matric }}
+          </span>
+          <span class="flex items-center gap-1 bg-blue-100 text-gray-800 border border-blue-200 px-2 py-1 rounded">
+            🏛️ {{ student.course }}
+          </span>
+        </div>
+      </div>
+
+      <!-- No Data Message -->
+      <div v-if="!paginatedStudents.length" class="text-center text-gray-400 italic py-10 col-span-full">
+        No students found.
       </div>
     </div>
 
-    <div class="flex justify-center items-center space-x-2 py-6 mb-6">
-      <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1" class="px-3 py-1 rounded-full bg-gray-200 hover:bg-gray-300 text-sm disabled:opacity-50">
-        «
-      </button>
+    <!-- Student Timetable Modal -->
+    <StudentScheduleModal
+      v-model:visible="showModal"
+      :studentName="selectedStudent.name"
+      :matric="selectedStudent.matric"
+      :sessionId="lsData?.session_id"
+    />
 
-      <button
-        v-for="page in totalPages"
-        :key="page"
-        @click="goToPage(page)"
-        class="px-3 py-1 rounded-full text-sm"
-        :class="{
-          'bg-[#933b3b] text-white font-semibold shadow': currentPage === page,
-          'bg-gray-100 hover:bg-gray-300': currentPage !== page
-        }"
-      >
-        {{ page }}
-      </button>
-
-      <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages" class="px-3 py-1 rounded-full bg-gray-200 hover:bg-gray-300 text-sm disabled:opacity-50">
-        »
-      </button>
-    </div>
-
-    <p class="text-xs text-center px-4 pb-6 text-gray-600">
-      If you have any comments or inquiries regarding this webpage, please contact the webmaster at
-      <a href="mailto:ttms@fc.utm.my" class="text-blue-600">ttms@fc.utm.my</a><br />
-      Copyright ©️ 2002–2025, Faculty of Computing, UTM
+    <!-- Footer -->
+    <p class="text-xs text-center mt-6 px-4 text-gray-600">
+      If you have any comments or questions regarding this webpage, please contact
+      <a href="mailto:ttms@fc.utm.my" class="text-red-600">ttms@fc.utm.my</a>.<br />
+      &copy; 2002–2025, Faculty of Computing, UTM. All rights reserved.
     </p>
   </div>
 </template>
-
-<style scoped>
-.min-h-screen {
-  display: flex;
-  flex-direction: column;
-}
-</style>

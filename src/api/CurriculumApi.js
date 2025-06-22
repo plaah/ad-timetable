@@ -1,6 +1,6 @@
 import BaseApi from "./BaseApi";
 
-export default class CurriculumApi extends BaseApi {
+export default class KurikulumApi extends BaseApi {
     async getCurricula() {
         return this.get({ entity: "kurikulum" });
     }

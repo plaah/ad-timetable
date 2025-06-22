@@ -1,59 +1,79 @@
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import Toggle from "@/components/Toggle.vue";
+import LecturerScheduleModal from "@/components/LecturerScheduleModal.vue";
 import { userName, userMatric } from "@/constants/ApiConstants.js";
+import {
+  fetchCurrentSession,
+  fetchAdminSession,
+  fetchLecturers
+} from "@/api/LecturerApi.js";
 
+// Auth dari localStorage
 const lsData = JSON.parse(localStorage.getItem("web.fc.utm.my_usersession"));
 if (lsData) {
   userName.value = lsData.full_name;
   userMatric.value = lsData.login_name;
 }
 
-const lecturers = ref([
-  { name: "AB. RAZAK BIN CHE HUSSIN", subjectCount: 2, sectionCount: 4, studentCount: 100 },
-  { name: "ADILA FIRDAUS BINTI ARBAIN", subjectCount: 4, sectionCount: 3, studentCount: 85 },
-  { name: "AIDA BT. ALI", subjectCount: 3, sectionCount: 4, studentCount: 120 },
-  { name: "AHMAD FARIZ BIN ALI", subjectCount: 3, sectionCount: 5, studentCount: 110 },
-  { name: "NURUL AIN BINTI MOHD NOH", subjectCount: 5, sectionCount: 6, studentCount: 130 },
-  { name: "SAIFUL NIZAM BIN ISMAIL", subjectCount: 2, sectionCount: 2, studentCount: 70 },
-  { name: "WAN NORLIZA BINTI WAN MANSOR", subjectCount: 3, sectionCount: 3, studentCount: 95 },
-  { name: "SYAFIQ BIN AZIZ", subjectCount: 4, sectionCount: 5, studentCount: 145 },
-  { name: "HAFIZ BIN KAMARUDIN", subjectCount: 3, sectionCount: 4, studentCount: 105 },
-  { name: "ZULKIFLI BIN RAHMAN", subjectCount: 4, sectionCount: 4, studentCount: 90 },
-  { name: "MAISARAH BINTI OTHMAN", subjectCount: 2, sectionCount: 2, studentCount: 65 },
-  { name: "NAJIHAH BINTI SULAIMAN", subjectCount: 3, sectionCount: 3, studentCount: 98 },
-  { name: "FADHLI BIN HASSAN", subjectCount: 5, sectionCount: 6, studentCount: 140 },
-  { name: "LATIFAH BINTI ABDUL GHANI", subjectCount: 2, sectionCount: 3, studentCount: 88 },
-  { name: "RIZAL BIN MOHAMAD", subjectCount: 4, sectionCount: 4, studentCount: 115 },
-  { name: "AZRINA BINTI YUSOF", subjectCount: 3, sectionCount: 2, studentCount: 75 },
-  { name: "FATIN FARHANA BINTI AZMI", subjectCount: 4, sectionCount: 3, studentCount: 100 },
-  { name: "IZWAN BIN HUSSEIN", subjectCount: 2, sectionCount: 2, studentCount: 67 },
-  { name: "SHARIFAH ZAINAB BINTI SYED", subjectCount: 3, sectionCount: 4, studentCount: 123 },
-  { name: "JULIANA BINTI MOHD SAID", subjectCount: 4, sectionCount: 4, studentCount: 94 },
-  { name: "ZAKARIA BIN MOHD YUNUS", subjectCount: 2, sectionCount: 2, studentCount: 58 },
-  { name: "MARIA BINTI RAZAK", subjectCount: 3, sectionCount: 3, studentCount: 101 },
-  { name: "SYAMIM BIN AZHAR", subjectCount: 4, sectionCount: 4, studentCount: 137 },
-  { name: "RAFIQ BIN SALLEH", subjectCount: 3, sectionCount: 3, studentCount: 82 }
-]);
-
+// State
+const lecturers = ref([]);
 const searchQuery = ref("");
-const itemsPerPage = 12;
+const itemsPerPage = 10;
 const currentPage = ref(1);
+const loading = ref(false);
 
-const filteredLecturers = computed(() => {
-  return lecturers.value.filter(item =>
-    item.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-  );
+// Modal
+const showModal = ref(false);
+const selectedLecturer = ref({ name: "", noPekerja: "" });
+
+// Load data dosen
+async function loadLecturers() {
+  loading.value = true;
+  try {
+    if (!lsData?.session_id) throw new Error("Session ID not found");
+    const session = await fetchCurrentSession();
+    const admin = await fetchAdminSession(lsData.session_id);
+    const data = await fetchLecturers(admin.session_id, session.sesi, session.semester);
+
+    lecturers.value = data.map(lect => ({
+      name: lect.nama,
+      noPekerja: String(lect.no_pekerja), // ✅ convert to string
+      subjectCount: lect.bil_subjek,
+      sectionCount: lect.bil_seksyen,
+      studentCount: lect.bil_pelajar
+    }));
+  } catch (e) {
+    console.error("Failed to load lecturers:", e);
+  } finally {
+    loading.value = false;
+  }
+}
+
+function openSchedule(lecturer) {
+  selectedLecturer.value = lecturer;
+  showModal.value = true;
+}
+
+onMounted(() => {
+  loadLecturers();
 });
+
+// Filter & Paginate
+const filteredLecturers = computed(() =>
+  lecturers.value.filter(lect =>
+    lect.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+  )
+);
 
 const paginatedLecturers = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
   return filteredLecturers.value.slice(start, start + itemsPerPage);
 });
 
-const pageCount = computed(() => {
-  return Math.ceil(filteredLecturers.value.length / itemsPerPage) || 1;
-});
+const pageCount = computed(() =>
+  Math.ceil(filteredLecturers.value.length / itemsPerPage) || 1
+);
 
 function gotoPage(page) {
   if (page < 1) page = 1;
@@ -67,43 +87,63 @@ watch(searchQuery, () => {
 </script>
 
 <template>
-  <div class="bg-gray-50 min-h-screen pt-20">
+  <div class="bg-gray-100 min-h-screen pt-20 font-[Segoe UI] text-[15px]">
     <Toggle titleBanner="Lecturer" />
 
-    <!-- Search Bar Left -->
-    <div class="flex justify-start px-6 py-4 max-w-7xl mx-auto">
-      <input
-        v-model="searchQuery"
-        type="text"
-        placeholder="Search lecturer name..."
-        class="border px-4 py-2 text-sm rounded shadow-sm w-full sm:w-72 focus:outline-none focus:ring-2 focus:ring-[#933b3b]"
-      />
+    <!-- Search & Pagination -->
+    <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center md:items-start py-4 gap-4">
+      <!-- Search -->
+      <div class="flex items-center gap-2 w-full md:w-auto">
+        <label class="font-normal whitespace-nowrap">Search:</label>
+        <input
+          v-model="searchQuery"
+          placeholder="Search lecturer name..."
+          class="border border-gray-400 rounded px-3 py-1 w-72 shadow-sm"
+        />
+      </div>
+
+      <!-- Pagination -->
+      <div class="flex items-center gap-1 text-sm md:ml-auto">
+        <button @click="gotoPage(1)" :disabled="currentPage === 1" class="px-2 py-1 border rounded">&laquo;</button>
+        <button @click="gotoPage(currentPage - 1)" :disabled="currentPage === 1" class="px-2 py-1 border rounded">&lt;</button>
+        <span>Page</span>
+        <select
+          v-model="currentPage"
+          @change="gotoPage(Number(currentPage))"
+          class="px-2 py-1 border rounded"
+        >
+          <option v-for="page in pageCount" :key="page" :value="page">{{ page }}</option>
+        </select>
+        <span>of {{ pageCount }}</span>
+        <button @click="gotoPage(currentPage + 1)" :disabled="currentPage === pageCount" class="px-2 py-1 border rounded">&gt;</button>
+        <button @click="gotoPage(pageCount)" :disabled="currentPage === pageCount" class="px-2 py-1 border rounded">&raquo;</button>
+      </div>
     </div>
 
-    <!-- Cards -->
-    <div class="grid gap-6 px-6 pb-12 max-w-7xl mx-auto grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+    <!-- Lecturer Cards -->
+    <div class="grid gap-4 px-4 py-2 max-w-6xl mx-auto grid-cols-1 md:grid-cols-2">
       <div
         v-for="(lecturer, index) in paginatedLecturers"
-        :key="index"
-        class="bg-white shadow border border-gray-200 rounded-xl px-6 py-5 flex flex-col gap-2"
+        :key="(currentPage - 1) * itemsPerPage + index"
+        class="bg-white border border-gray-200 hover:shadow-md rounded-xl px-4 py-3 flex flex-col justify-between min-h-[140px]"
       >
-        <div class="flex items-center gap-2 text-sm text-[#933b3b] font-semibold">
-          <span class="text-yellow-500">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 inline-block" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
-            </svg>
-          </span>
+        <!-- Click name to open modal -->
+        <div
+          @click="openSchedule(lecturer)"
+          class="cursor-pointer text-[#933b3b] font-semibold text-lg hover:underline"
+        >
           {{ lecturer.name }}
         </div>
-        <div class="flex flex-wrap gap-2 pt-2 text-sm text-gray-700">
-          <span class="bg-gray-100 px-2 py-1 rounded border text-xs flex items-center gap-1">
-            📚 Subjects: {{ lecturer.subjectCount }}
+
+        <div class="flex flex-wrap gap-2 text-sm mt-2">
+          <span class="flex items-center gap-1 bg-red-50 border border-red-200 px-2 py-1 rounded">
+            📘 Subjects: {{ lecturer.subjectCount }}
           </span>
-          <span class="bg-gray-100 px-2 py-1 rounded border text-xs flex items-center gap-1">
-            🏠 Sections: {{ lecturer.sectionCount }}
+          <span class="flex items-center gap-1 bg-gray-100 border border-gray-300 px-2 py-1 rounded">
+            🧩 Sections: {{ lecturer.sectionCount }}
           </span>
-          <span class="bg-blue-100 px-2 py-1 rounded border text-xs flex items-center gap-1">
-            👨‍🎓 Students: {{ lecturer.studentCount }}
+          <span class="flex items-center gap-1 bg-blue-50 border border-blue-200 px-2 py-1 rounded">
+            👥 Students: {{ lecturer.studentCount }}
           </span>
         </div>
       </div>
@@ -113,31 +153,30 @@ watch(searchQuery, () => {
       </div>
     </div>
 
-    <!-- Pagination -->
-    <div class="flex justify-center items-center gap-2 py-4">
-      <button @click="gotoPage(currentPage - 1)" :disabled="currentPage === 1" class="px-2 py-1 text-sm rounded border bg-white shadow disabled:opacity-50">
-        «
-      </button>
-      <span class="text-sm">Page</span>
-      <select v-model="currentPage" class="border text-sm rounded px-2 py-1">
-        <option v-for="p in pageCount" :key="p" :value="p">{{ p }}</option>
-      </select>
-      <span class="text-sm">of {{ pageCount }}</span>
-      <button @click="gotoPage(currentPage + 1)" :disabled="currentPage === pageCount" class="px-2 py-1 text-sm rounded border bg-white shadow disabled:opacity-50">
-        »
-      </button>
-    </div>
-      <!-- Footer -->
-    <p class="text-xs text-center px-4 pb-6 text-gray-600">
-      If you have any comments or questions regarding this page, please contact
-      <a href="mailto:ttms@fc.utm.my" class="text-blue-600">ttms@fc.utm.my</a>.<br />
-      Copyright &copy; 2002–2025, Faculty of Computing, UTM. All rights reserved.
+    <!-- Modal transparan -->
+    <Teleport to="body">
+      <div
+        v-if="showModal"
+        class="fixed top-0 left-0 w-full h-full z-50 flex justify-center items-center pointer-events-none"
+      >
+        <div
+          class="bg-white rounded-xl shadow-xl p-6 max-w-5xl w-[95%] max-h-[90vh] overflow-y-auto pointer-events-auto"
+        >
+          <LecturerScheduleModal
+            v-model:visible="showModal"
+            :lecturerName="selectedLecturer.name"
+            :noPekerja="selectedLecturer.noPekerja"
+            :sessionId="lsData?.session_id"
+          />
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Footer -->
+    <p class="text-xs text-center mt-6 px-4 text-gray-600">
+      If you have any comments or inquiries regarding this webpage, please contact the webmaster at
+      <a href="mailto:ttms@fc.utm.my" class="text-red-600">ttms@fc.utm.my</a><br />
+      &copy; 2002–2025, Faculty of Computing, UTM. All rights reserved.
     </p>
   </div>
 </template>
-
-<style scoped>
-input::placeholder {
-  color: #999;
-}
-</style>
