@@ -121,7 +121,7 @@ watch(searchQuery, () => {
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="text-center text-gray-500 py-10">Loading Student List...</div>
+    <div v-if="loading" class="text-center text-gray-500 py-10">Loading Students...</div>
 
     <!-- Student Cards -->
     <div class="grid gap-4 px-4 py-4 max-w-6xl mx-auto grid-cols-1 md:grid-cols-2">
@@ -150,10 +150,13 @@ watch(searchQuery, () => {
         </div>
       </div>
 
-      <!-- No Data Message -->
-      <div v-if="!paginatedStudents.length" class="text-center text-gray-400 italic py-10 col-span-full">
-        No students found.
-      </div>
+     <div
+        v-if="!loading && !paginatedStudents.length"
+        class="text-center text-gray-400 italic py-10 col-span-full"
+        >
+            No student found
+</div>
+
     </div>
 
     <!-- Student Timetable Modal -->

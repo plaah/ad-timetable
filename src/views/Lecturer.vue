@@ -6,7 +6,8 @@ import { userName, userMatric } from "@/constants/ApiConstants.js";
 import {
   fetchCurrentSession,
   fetchAdminSession,
-  fetchLecturers
+  fetchLecturers,
+  fetchLecturerSections
 } from "@/api/LecturerApi.js";
 
 // Auth dari localStorage
@@ -27,7 +28,7 @@ const loading = ref(false);
 const showModal = ref(false);
 const selectedLecturer = ref({ name: "", noPekerja: "" });
 
-// Load data dosen
+// Load data dosen dengan cache
 async function loadLecturers() {
   loading.value = true;
   try {
@@ -36,13 +37,36 @@ async function loadLecturers() {
     const admin = await fetchAdminSession(lsData.session_id);
     const data = await fetchLecturers(admin.session_id, session.sesi, session.semester);
 
-    lecturers.value = data.map(lect => ({
-      name: lect.nama,
-      noPekerja: String(lect.no_pekerja), // ✅ convert to string
-      subjectCount: lect.bil_subjek,
-      sectionCount: lect.bil_seksyen,
-      studentCount: lect.bil_pelajar
-    }));
+    const lecturersWithSubjects = await Promise.all(
+      data.map(async (lect) => {
+        const cacheKey = `lecturer_subj_${lect.no_pekerja}_${session.sesi}_${session.semester}`;
+        let currentSubjects = [];
+
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          currentSubjects = JSON.parse(cached);
+        } else {
+          const subjectList = await fetchLecturerSections(lect.no_pekerja);
+          currentSubjects = subjectList.filter(
+            (s) =>
+              s.sesi === session.sesi &&
+              String(s.semester) === String(session.semester)
+          );
+          localStorage.setItem(cacheKey, JSON.stringify(currentSubjects));
+        }
+
+        return {
+          name: lect.nama,
+          noPekerja: String(lect.no_pekerja),
+          subjectCount: lect.bil_subjek,
+          sectionCount: lect.bil_seksyen,
+          studentCount: lect.bil_pelajar,
+          subjects: currentSubjects.map((s) => `${s.kod_subjek} - ${s.nama_subjek}`),
+        };
+      })
+    );
+
+    lecturers.value = lecturersWithSubjects;
   } catch (e) {
     console.error("Failed to load lecturers:", e);
   } finally {
@@ -61,9 +85,14 @@ onMounted(() => {
 
 // Filter & Paginate
 const filteredLecturers = computed(() =>
-  lecturers.value.filter(lect =>
-    lect.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
+  lecturers.value.filter((lect) => {
+    const query = searchQuery.value.toLowerCase();
+    const nameMatch = lect.name.toLowerCase().includes(query);
+    const courseMatch = lect.subjects.some((subj) =>
+      subj.toLowerCase().includes(query)
+    );
+    return nameMatch || courseMatch;
+  })
 );
 
 const paginatedLecturers = computed(() => {
@@ -92,17 +121,15 @@ watch(searchQuery, () => {
 
     <!-- Search & Pagination -->
     <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center md:items-start py-4 gap-4">
-      <!-- Search -->
       <div class="flex items-center gap-2 w-full md:w-auto">
         <label class="font-normal whitespace-nowrap">Search:</label>
         <input
           v-model="searchQuery"
-          placeholder="Search lecturer name..."
+          placeholder="Search lecturer name or course..."
           class="border border-gray-400 rounded px-3 py-1 w-72 shadow-sm"
         />
       </div>
 
-      <!-- Pagination -->
       <div class="flex items-center gap-1 text-sm md:ml-auto">
         <button @click="gotoPage(1)" :disabled="currentPage === 1" class="px-2 py-1 border rounded">&laquo;</button>
         <button @click="gotoPage(currentPage - 1)" :disabled="currentPage === 1" class="px-2 py-1 border rounded">&lt;</button>
@@ -122,35 +149,50 @@ watch(searchQuery, () => {
 
     <!-- Lecturer Cards -->
     <div class="grid gap-4 px-4 py-2 max-w-6xl mx-auto grid-cols-1 md:grid-cols-2">
-      <div
-        v-for="(lecturer, index) in paginatedLecturers"
-        :key="(currentPage - 1) * itemsPerPage + index"
-        class="bg-white border border-gray-200 hover:shadow-md rounded-xl px-4 py-3 flex flex-col justify-between min-h-[140px]"
-      >
-        <!-- Click name to open modal -->
+      <div v-if="loading" class="text-center text-gray-500 italic py-10 col-span-full">
+        Loading lecturers...
+      </div>
+
+      <template v-else>
         <div
-          @click="openSchedule(lecturer)"
-          class="cursor-pointer text-[#933b3b] font-semibold text-lg hover:underline"
+          v-for="(lecturer, index) in paginatedLecturers"
+          :key="(currentPage - 1) * itemsPerPage + index"
+          class="bg-white border border-gray-200 hover:shadow-md rounded-xl px-4 py-3 flex flex-col justify-between min-h-[140px]"
         >
-          {{ lecturer.name }}
+          <!-- Nama dosen dengan emoji 🎓 -->
+          <div
+            @click="openSchedule(lecturer)"
+            class="cursor-pointer text-[#933b3b] font-semibold text-lg hover:underline flex items-center gap-2"
+          >
+            🎓 {{ lecturer.name }}
+          </div>
+
+          <div class="text-sm text-gray-700 mt-1" v-if="lecturer.subjects?.length">
+            <ul class="list-disc pl-5">
+              <li v-for="(subj, i) in lecturer.subjects" :key="i">{{ subj }}</li>
+            </ul>
+          </div>
+
+          <div class="flex flex-wrap gap-2 text-sm mt-2">
+            <span class="flex items-center gap-1 bg-red-50 border border-red-200 px-2 py-1 rounded">
+              📘 Subjects: {{ lecturer.subjectCount }}
+            </span>
+            <span class="flex items-center gap-1 bg-gray-100 border border-gray-300 px-2 py-1 rounded">
+              🧩 Sections: {{ lecturer.sectionCount }}
+            </span>
+            <span class="flex items-center gap-1 bg-blue-50 border border-blue-200 px-2 py-1 rounded">
+              👥 Students: {{ lecturer.studentCount }}
+            </span>
+          </div>
         </div>
 
-        <div class="flex flex-wrap gap-2 text-sm mt-2">
-          <span class="flex items-center gap-1 bg-red-50 border border-red-200 px-2 py-1 rounded">
-            📘 Subjects: {{ lecturer.subjectCount }}
-          </span>
-          <span class="flex items-center gap-1 bg-gray-100 border border-gray-300 px-2 py-1 rounded">
-            🧩 Sections: {{ lecturer.sectionCount }}
-          </span>
-          <span class="flex items-center gap-1 bg-blue-50 border border-blue-200 px-2 py-1 rounded">
-            👥 Students: {{ lecturer.studentCount }}
-          </span>
+        <div
+          v-if="!paginatedLecturers.length"
+          class="text-center text-gray-400 italic py-10 col-span-full"
+        >
+          No lecturer found
         </div>
-      </div>
-
-      <div v-if="!paginatedLecturers.length" class="text-center text-gray-400 italic py-10 col-span-full">
-        No lecturers found.
-      </div>
+      </template>
     </div>
 
     <!-- Modal transparan -->
