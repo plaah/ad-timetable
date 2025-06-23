@@ -39,7 +39,7 @@ async function loadPage(pageNum) {
     totalPages.value = Math.ceil(totalLect / limit) || 1;
     page.value = pageNum;
   } catch (err) {
-    error.value = "Gagal memuat data clash dosen.";
+    error.value = "Failed to load lecturer clash data.";
   } finally {
     loading.value = false;
   }
@@ -66,11 +66,11 @@ onMounted(() => {
         <table class="w-full text-sm text-left table-auto">
           <thead class="bg-[#933b3b] text-white text-center">
             <tr>
-              <th class="px-4 py-2 border-r">Bil</th>
-              <th class="px-4 py-2 border-r">Nama</th>
-              <th class="px-4 py-2 border-r">Bil Seksyen</th>
-              <th class="px-4 py-2 border-r">Pertindihan Jadual</th>
-              <th class="px-4 py-2">Cadangan</th>
+              <th class="px-4 py-2 border-r">No.</th>
+              <th class="px-4 py-2 border-r">Name</th>
+              <th class="px-4 py-2 border-r">Section Count</th>
+              <th class="px-4 py-2 border-r">Schedule Conflicts</th>
+              <th class="px-4 py-2">Suggestion</th>
             </tr>
           </thead>
           <tbody>

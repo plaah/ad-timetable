@@ -1,16 +1,17 @@
 <template>
   <div class="p-4 mt-16">
-  <Toggle titleBanner="Analysis Student" />
+    <Toggle titleBanner="Student Analysis" />
+    
     <!-- Header + Search + Pagination -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
       <h1 class="text-xl font-bold text-red-800 flex items-center gap-2">
-        👥 Analisis Jadual Pelajar Mengikut Subjek & Seksyen
+        👥 Student Schedule Analysis by Subject & Section
       </h1>
 
       <input
         v-model="searchTerm"
         type="text"
-        placeholder="Cari kod/nama subjek atau pensyarah..."
+        placeholder="Search subject code/name or lecturer..."
         class="px-3 py-2 border border-gray-300 rounded text-sm w-full md:w-72"
       />
     </div>
@@ -20,12 +21,12 @@
       <table class="min-w-full text-sm text-left border border-gray-300">
         <thead class="bg-red-800 text-white text-sm">
           <tr>
-            <th class="px-4 py-2 text-left">🔢 Bil.</th>
-            <th class="px-4 py-2 text-left">📘 Kod Subjek</th>
-            <th class="px-4 py-2 text-left">📖 Nama Subjek</th>
-            <th class="px-4 py-2 text-left">📑 Seksyen</th>
-            <th class="px-4 py-2 text-left">👩‍🏫 Pensyarah</th>
-            <th class="px-4 py-2 text-left">👥 Bil. Pelajar</th>
+            <th class="px-4 py-2 text-left">🔢 No.</th>
+            <th class="px-4 py-2 text-left">📘 Subject Code</th>
+            <th class="px-4 py-2 text-left">📖 Subject Name</th>
+            <th class="px-4 py-2 text-left">📑 Section</th>
+            <th class="px-4 py-2 text-left">👩‍🏫 Lecturer</th>
+            <th class="px-4 py-2 text-left">👥 Student Count</th>
           </tr>
         </thead>
         <tbody v-if="paginatedData.length">
@@ -45,7 +46,7 @@
         </tbody>
         <tbody v-else>
           <tr>
-            <td colspan="6" class="text-center py-4 text-gray-400">Memuat data...</td>
+            <td colspan="6" class="text-center py-4 text-gray-400">Loading data...</td>
           </tr>
         </tbody>
       </table>
@@ -121,9 +122,9 @@ export default {
       });
 
       this.subjects = flattened;
-      console.log("✅ Semua bil_pelajar dimuat dari seksyen_list.");
+      console.log("✅ All bil_pelajar loaded from seksyen_list.");
     } catch (error) {
-      console.error("❌ Gagal memuat data student analysis:", error);
+      console.error("❌ Failed to load student analysis data:", error);
     }
   },
 };

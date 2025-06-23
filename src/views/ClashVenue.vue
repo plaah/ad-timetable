@@ -46,7 +46,7 @@ onMounted(async () => {
         : `${entry.kod_subjek || "-"} - -`,
     }));
   } catch (err) {
-    console.error("❌ Gagal memuat data:", err);
+    console.error("❌ Failed to load data:", err);
   } finally {
     loading.value = false;
   }
@@ -78,14 +78,14 @@ const paginatedRooms = computed(() => {
 
     <main class="px-6">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <h2 class="text-xl font-semibold text-[#933b3b]">📌 Jadwal Bentrok Ruangan</h2>
+        <h2 class="text-xl font-semibold text-[#933b3b]">📌 Room Clash Schedule</h2>
 
         <!-- Search + Pagination -->
         <div class="flex flex-col md:flex-row md:items-center md:gap-3 w-full md:w-auto">
           <input
             v-model="searchTerm"
             type="text"
-            placeholder="Cari kod ruang, nama, singkatan, subjek..."
+            placeholder="Search room code, name, short name, subject..."
             class="w-full md:w-80 px-3 py-2 border border-gray-300 rounded text-sm"
           />
 
@@ -109,14 +109,14 @@ const paginatedRooms = computed(() => {
         <table class="w-full table-auto text-sm text-center">
           <thead class="bg-[#933b3b] text-white">
             <tr>
-              <th class="p-2">Bil</th>
-              <th class="p-2">Kod Ruang</th>
-              <th class="p-2">Nama Ruang</th>
-              <th class="p-2">Nama Singkatan</th>
-              <th class="p-2">Kod Fakulti/Jabatan</th>
-              <th class="p-2">Hari</th>
-              <th class="p-2">Masa</th>
-              <th class="p-2">Subjek</th>
+              <th class="p-2">No.</th>
+              <th class="p-2">Room Code</th>
+              <th class="p-2">Room Name</th>
+              <th class="p-2">Short Name</th>
+              <th class="p-2">Faculty/Dept. Code</th>
+              <th class="p-2">Day</th>
+              <th class="p-2">Time</th>
+              <th class="p-2">Subject</th>
             </tr>
           </thead>
           <tbody>
@@ -134,7 +134,7 @@ const paginatedRooms = computed(() => {
         </table>
 
         <div v-if="paginatedRooms.length === 0 && !loading" class="text-center text-gray-400 text-sm mt-4">
-          Tidak ada hasil ditemukan.
+          No results found.
         </div>
       </div>
     </main>
