@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import Toggle from "@/components/Toggle.vue";
 import ClashVenueApi from "@/api/ClashVenueApi";
 import SemesterApi from "@/api/SemesterApi";
@@ -10,8 +10,10 @@ const sampleFacultyCode = "FSKSM";
 const sampleRoomCode = "N28-105-01";
 
 const clashRooms = ref([]);
+const searchTerm = ref("");
 const loading = ref(true);
-const error = ref(null);
+const currentPage = ref(1);
+const perPage = 20;
 
 const lsData = JSON.parse(localStorage.getItem("web.fc.utm.my_usersession"));
 if (lsData) {
@@ -44,10 +46,29 @@ onMounted(async () => {
         : `${entry.kod_subjek || "-"} - -`,
     }));
   } catch (err) {
-    error.value = "Gagal memuat data jadwal ruang.";
+    console.error("❌ Gagal memuat data:", err);
   } finally {
     loading.value = false;
   }
+});
+
+const filteredRooms = computed(() => {
+  const term = searchTerm.value.toLowerCase();
+  return clashRooms.value.filter(room =>
+    room.roomCode.toLowerCase().includes(term) ||
+    room.roomName.toLowerCase().includes(term) ||
+    room.shortName.toLowerCase().includes(term) ||
+    room.subject.toLowerCase().includes(term)
+  );
+});
+
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(filteredRooms.value.length / perPage))
+);
+
+const paginatedRooms = computed(() => {
+  const start = (currentPage.value - 1) * perPage;
+  return filteredRooms.value.slice(start, start + perPage);
 });
 </script>
 
@@ -56,7 +77,33 @@ onMounted(async () => {
     <Toggle titleBanner="Clash Venue" />
 
     <main class="px-6">
-      <h2 class="text-xl font-semibold text-[#933b3b] mb-4">📌 Jadwal Bentrok Ruangan</h2>
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+        <h2 class="text-xl font-semibold text-[#933b3b]">📌 Jadwal Bentrok Ruangan</h2>
+
+        <!-- Search + Pagination -->
+        <div class="flex flex-col md:flex-row md:items-center md:gap-3 w-full md:w-auto">
+          <input
+            v-model="searchTerm"
+            type="text"
+            placeholder="Cari kod ruang, nama, singkatan, subjek..."
+            class="w-full md:w-80 px-3 py-2 border border-gray-300 rounded text-sm"
+          />
+
+          <div class="flex items-center gap-1 mt-2 md:mt-0 text-sm">
+            <button class="px-2 py-1 border rounded" :disabled="currentPage === 1" @click="currentPage--">‹</button>
+            <span>Page</span>
+            <input
+              type="number"
+              v-model.number="currentPage"
+              :min="1"
+              :max="totalPages"
+              class="w-14 text-center border rounded px-2 py-1"
+            />
+            <span>of {{ totalPages }}</span>
+            <button class="px-2 py-1 border rounded" :disabled="currentPage === totalPages" @click="currentPage++">›</button>
+          </div>
+        </div>
+      </div>
 
       <div class="overflow-x-auto bg-white rounded-xl shadow p-4">
         <table class="w-full table-auto text-sm text-center">
@@ -73,8 +120,8 @@ onMounted(async () => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(room, index) in clashRooms" :key="index" class="border-t">
-              <td class="p-2">{{ index + 1 }}</td>
+            <tr v-for="(room, index) in paginatedRooms" :key="index" class="border-t">
+              <td class="p-2">{{ (currentPage - 1) * perPage + index + 1 }}</td>
               <td class="p-2 text-[#933b3b] font-medium underline cursor-pointer">{{ room.roomCode }}</td>
               <td class="p-2">{{ room.roomName }}</td>
               <td class="p-2">{{ room.shortName }}</td>
@@ -86,18 +133,9 @@ onMounted(async () => {
           </tbody>
         </table>
 
-        <div v-if="clashRooms.length === 0 && !loading" class="text-center text-gray-400 text-sm mt-4">
-          Tidak ada data jadwal ruang bentrok.
+        <div v-if="paginatedRooms.length === 0 && !loading" class="text-center text-gray-400 text-sm mt-4">
+          Tidak ada hasil ditemukan.
         </div>
-      </div>
-
-      <div class="text-sm flex justify-center py-4 space-x-2">
-        <button class="px-3 py-1 bg-white border rounded shadow hover:bg-gray-100">&lt;&lt;</button>
-        <button class="font-bold underline">1</button>
-        <button>2</button>
-        <button>3</button>
-        <button>4</button>
-        <button class="px-3 py-1 bg-white border rounded shadow hover:bg-gray-100">&gt;&gt;</button>
       </div>
     </main>
 

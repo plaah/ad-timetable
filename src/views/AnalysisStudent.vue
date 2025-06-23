@@ -1,20 +1,18 @@
 <template>
   <div class="p-4 mt-16">
-    <!-- Header + Pagination -->
+  <Toggle titleBanner="Analysis Student" />
+    <!-- Header + Search + Pagination -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
       <h1 class="text-xl font-bold text-red-800 flex items-center gap-2">
         👥 Analisis Jadual Pelajar Mengikut Subjek & Seksyen
       </h1>
 
-      <div class="flex items-center gap-2">
-        <button class="px-2 py-1 border rounded disabled:opacity-50" :disabled="currentPage === 1" @click="currentPage = 1">«</button>
-        <button class="px-2 py-1 border rounded disabled:opacity-50" :disabled="currentPage === 1" @click="currentPage--">‹</button>
-        <span class="text-sm">Page</span>
-        <input v-model.number="currentPage" type="number" class="w-14 text-center border rounded px-2 py-1 text-sm" :min="1" :max="totalPages" />
-        <span class="text-sm">of {{ totalPages }}</span>
-        <button class="px-2 py-1 border rounded disabled:opacity-50" :disabled="currentPage === totalPages" @click="currentPage++">›</button>
-        <button class="px-2 py-1 border rounded disabled:opacity-50" :disabled="currentPage === totalPages" @click="currentPage = totalPages">»</button>
-      </div>
+      <input
+        v-model="searchTerm"
+        type="text"
+        placeholder="Cari kod/nama subjek atau pensyarah..."
+        class="px-3 py-2 border border-gray-300 rounded text-sm w-full md:w-72"
+      />
     </div>
 
     <!-- Table -->
@@ -42,9 +40,7 @@
             <td class="px-4 py-2">{{ item.nama_subjek }}</td>
             <td class="px-4 py-2">{{ item.seksyen }}</td>
             <td class="px-4 py-2">{{ item.pensyarah }}</td>
-            <td class="px-4 py-2 text-blue-700 font-medium">
-              {{ item.bil_pelajar }}
-            </td>
+            <td class="px-4 py-2 text-blue-700 font-medium">{{ item.bil_pelajar }}</td>
           </tr>
         </tbody>
         <tbody v-else>
@@ -53,6 +49,17 @@
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex justify-center items-center gap-2 mt-4">
+      <button class="px-2 py-1 border rounded disabled:opacity-50" :disabled="currentPage === 1" @click="currentPage = 1">«</button>
+      <button class="px-2 py-1 border rounded disabled:opacity-50" :disabled="currentPage === 1" @click="currentPage--">‹</button>
+      <span class="text-sm">Page</span>
+      <input v-model.number="currentPage" type="number" class="w-14 text-center border rounded px-2 py-1 text-sm" :min="1" :max="totalPages" />
+      <span class="text-sm">of {{ totalPages }}</span>
+      <button class="px-2 py-1 border rounded disabled:opacity-50" :disabled="currentPage === totalPages" @click="currentPage++">›</button>
+      <button class="px-2 py-1 border rounded disabled:opacity-50" :disabled="currentPage === totalPages" @click="currentPage = totalPages">»</button>
     </div>
   </div>
 </template>
@@ -70,15 +77,24 @@ export default {
       subjects: [],
       currentPage: 1,
       perPage: 20,
+      searchTerm: "",
     };
   },
   computed: {
+    filteredSubjects() {
+      const term = this.searchTerm.toLowerCase();
+      return this.subjects.filter((item) =>
+        item.kod_subjek.toLowerCase().includes(term) ||
+        item.nama_subjek.toLowerCase().includes(term) ||
+        item.pensyarah.toLowerCase().includes(term)
+      );
+    },
     paginatedData() {
       const start = (this.currentPage - 1) * this.perPage;
-      return this.subjects.slice(start, start + this.perPage);
+      return this.filteredSubjects.slice(start, start + this.perPage);
     },
     totalPages() {
-      return Math.max(1, Math.ceil(this.subjects.length / this.perPage));
+      return Math.max(1, Math.ceil(this.filteredSubjects.length / this.perPage));
     },
   },
   async mounted() {
@@ -93,7 +109,6 @@ export default {
 
         if (Array.isArray(subject.seksyen_list)) {
           subject.seksyen_list.forEach((seksyen) => {
-            const pelajarList = seksyen.pelajar || seksyen.pelajar_list || [];
             flattened.push({
               kod_subjek: kod_subjek.trim(),
               nama_subjek,
