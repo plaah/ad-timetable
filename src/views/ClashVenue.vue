@@ -1,155 +1,110 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import SemesterApi from "@/api/SemesterApi";
 import Toggle from "@/components/Toggle.vue";
-import { userInfo, userName, userMatric } from "@/constants/ApiConstants.js";
-import ProfileBanner from "@/components/ProfileBanner.vue";
+import ClashVenueApi from "@/api/ClashVenueApi";
+import SemesterApi from "@/api/SemesterApi";
+import { userName, userMatric } from "@/constants/ApiConstants";
+import { days, timetable } from "@/constants/TimeTableConstants";
 
+const sampleFacultyCode = "FSKSM";
+const sampleRoomCode = "N28-105-01";
 
-// Session Info
+const clashRooms = ref([]);
+const loading = ref(true);
+const error = ref(null);
+
 const lsData = JSON.parse(localStorage.getItem("web.fc.utm.my_usersession"));
 if (lsData) {
-    userName.value = lsData.full_name;
-    userMatric.value = lsData.login_name;
+  userName.value = lsData.full_name;
+  userMatric.value = lsData.login_name;
 }
 
-// Dummy clash data
-const clashRooms = ref([
-    {
-        roomCode: "N28-105-01",
-        roomName: "Bilik Kuliah 1",
-        shortName: "BK1",
-        faculty: "FSKSM / -",
-        day: "Isnin",
-        time: "07:00 AM – 07:50 AM",
-        subject: "SEC1143 - 7 - seahcs",
-    },
-    {
-        roomCode: "N28-105-01",
-        roomName: "Bilik Kuliah 1",
-        shortName: "BK1",
-        faculty: "FSKSM / -",
-        day: "Selasa",
-        time: "11:00 AM – 11:50 AM",
-        subject: "UHLM012 - 3 - -",
-    },
-    {
-        roomCode: "N28-105-01",
-        roomName: "Bilik Kuliah 1",
-        shortName: "BK1",
-        faculty: "FSKSM / -",
-        day: "Selasa",
-        time: "01:00 PM – 01:50 PM",
-        subject: "SEC1143 - 3 - azlanmz",
-    },
-    {
-        roomCode: "N28-105-01",
-        roomName: "Bilik Kuliah 1",
-        shortName: "BK1",
-        faculty: "FSKSM / -",
-        day: "Rabu",
-        time: "03:00 PM – 03:50 PM",
-        subject: "SCST1223 - 4 - izyanzzati",
-    },
-    // ... more rows
-]);
+const semesterApi = new SemesterApi();
+
+onMounted(async () => {
+  try {
+    loading.value = true;
+    const semesterInfo = await semesterApi.getCurrentSemesterInfo();
+    const { sesi, semester } = semesterInfo[0];
+
+    const ruangList = await ClashVenueApi.fetchRoomsByFaculty(sampleFacultyCode);
+    const ruang = ruangList.find(r => r.kod_ruang === sampleRoomCode) || {};
+
+    const jadualList = await ClashVenueApi.fetchRoomSchedule(sesi, semester, sampleRoomCode);
+
+    clashRooms.value = jadualList.map((entry) => ({
+      roomCode: ruang.kod_ruang || "-",
+      roomName: ruang.nama_ruang || "-",
+      shortName: ruang.nama_ruang_singkatan || "-",
+      faculty: `${ruang.kod_fakulti || "-"} / ${ruang.kod_jabatan || "-"}`,
+      day: days[(entry.hari ?? 1) - 1] || entry.hari || "-",
+      time: (timetable.find(t => t.masa === entry.masa)?.waktu) || entry.masa || "-",
+      subject: entry.subjek
+        ? `${entry.subjek.kod_subjek || "-"} - ${entry.subjek.seksyen || "-"}`
+        : `${entry.kod_subjek || "-"} - -`,
+    }));
+  } catch (err) {
+    error.value = "Gagal memuat data jadwal ruang.";
+  } finally {
+    loading.value = false;
+  }
+});
 </script>
 
 <template>
-    <div class="bg-gray-100 min-h-screen pt-30">
-        <Toggle />
+  <div class="bg-gradient-to-b from-gray-50 to-white min-h-screen pt-20">
+    <Toggle titleBanner="Clash Venue" />
 
-        <!-- Header Banner -->
-        <main>
-            
+    <main class="px-6">
+      <h2 class="text-xl font-semibold text-[#933b3b] mb-4">📌 Jadwal Bentrok Ruangan</h2>
 
-            <!-- Clash Table -->
-            <div class="overflow-x-auto px-4 py-4">
-                <table
-                    class="w-full border border-black text-sm text-center bg-[#d0e7f7]"
-                >
-                    <thead class="bg-[#b8d4ea]">
-                        <tr>
-                            <th class="border border-black px-2 py-1">Bil</th>
-                            <th class="border border-black px-2 py-1">
-                                Kod Ruang
-                            </th>
-                            <th class="border border-black px-2 py-1">
-                                Nama Ruang
-                            </th>
-                            <th class="border border-black px-2 py-1">
-                                Nama Singkatan
-                            </th>
-                            <th class="border border-black px-2 py-1">
-                                Kod Fakulti/Jabatan
-                            </th>
-                            <th class="border border-black px-2 py-1">Hari</th>
-                            <th class="border border-black px-2 py-1">Masa</th>
-                            <th class="border border-black px-2 py-1">
-                                Subjek
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="(room, index) in clashRooms" :key="index">
-                            <td class="border border-black px-2 py-1">
-                                {{ index + 1 }}
-                            </td>
-                            <td
-                                class="border border-black px-2 py-1 text-red-600 font-medium underline cursor-pointer"
-                            >
-                                {{ room.roomCode }}
-                            </td>
-                            <td
-                                class="border border-black px-2 py-1 text-red-600"
-                            >
-                                {{ room.roomName }}
-                            </td>
-                            <td
-                                class="border border-black px-2 py-1 text-red-600"
-                            >
-                                {{ room.shortName }}
-                            </td>
-                            <td
-                                class="border border-black px-2 py-1 text-red-600"
-                            >
-                                {{ room.faculty }}
-                            </td>
-                            <td
-                                class="border border-black px-2 py-1 text-red-600"
-                            >
-                                {{ room.day }}
-                            </td>
-                            <td
-                                class="border border-black px-2 py-1 text-red-600"
-                            >
-                                {{ room.time }}
-                            </td>
-                            <td
-                                class="border border-black px-2 py-1 text-red-600"
-                            >
-                                {{ room.subject }}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+      <div class="overflow-x-auto bg-white rounded-xl shadow p-4">
+        <table class="w-full table-auto text-sm text-center">
+          <thead class="bg-[#933b3b] text-white">
+            <tr>
+              <th class="p-2">Bil</th>
+              <th class="p-2">Kod Ruang</th>
+              <th class="p-2">Nama Ruang</th>
+              <th class="p-2">Nama Singkatan</th>
+              <th class="p-2">Kod Fakulti/Jabatan</th>
+              <th class="p-2">Hari</th>
+              <th class="p-2">Masa</th>
+              <th class="p-2">Subjek</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(room, index) in clashRooms" :key="index" class="border-t">
+              <td class="p-2">{{ index + 1 }}</td>
+              <td class="p-2 text-[#933b3b] font-medium underline cursor-pointer">{{ room.roomCode }}</td>
+              <td class="p-2">{{ room.roomName }}</td>
+              <td class="p-2">{{ room.shortName }}</td>
+              <td class="p-2">{{ room.faculty }}</td>
+              <td class="p-2">{{ room.day }}</td>
+              <td class="p-2">{{ room.time }}</td>
+              <td class="p-2">{{ room.subject }}</td>
+            </tr>
+          </tbody>
+        </table>
 
-            <!-- Pagination -->
-            <div class="text-sm flex justify-center py-4 space-x-2">
-                <button>&lt;&lt;</button>
-                <button class="font-bold underline">1</button>
-                <button>2</button>
-                <button>3</button>
-                <button>4</button>
-                <button>&gt;&gt;</button>
-            </div>
-        </main>
-        <!-- Footer -->
+        <div v-if="clashRooms.length === 0 && !loading" class="text-center text-gray-400 text-sm mt-4">
+          Tidak ada data jadwal ruang bentrok.
+        </div>
+      </div>
+
+      <div class="text-sm flex justify-center py-4 space-x-2">
+        <button class="px-3 py-1 bg-white border rounded shadow hover:bg-gray-100">&lt;&lt;</button>
+        <button class="font-bold underline">1</button>
+        <button>2</button>
+        <button>3</button>
+        <button>4</button>
+        <button class="px-3 py-1 bg-white border rounded shadow hover:bg-gray-100">&gt;&gt;</button>
+      </div>
+    </main>
+
     <p class="text-xs text-center mt-6 px-4 text-gray-600">
       If you have any comments or questions regarding this webpage, please contact
-      <a href="mailto:ttms@fc.utm.my" class="text-red-600">ttms@fc.utm.my</a>.<br />
+      <a href="mailto:ttms@fc.utm.my" class="text-[#933b3b] font-medium">ttms@fc.utm.my</a>.<br />
       &copy; 2002–2025, Faculty of Computing, UTM. All rights reserved.
     </p>
-    </div>
+  </div>
 </template>

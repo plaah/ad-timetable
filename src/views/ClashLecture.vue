@@ -3,146 +3,139 @@ import { ref, onMounted } from "vue";
 import SemesterApi from "@/api/SemesterApi";
 import Toggle from "@/components/Toggle.vue";
 import { userInfo, userName, userMatric } from "@/constants/ApiConstants.js";
-import ProfileBanner from "@/components/ProfileBanner.vue";
-
+import { fetchLecturerClashBatch } from "@/api/ClashLecturerApi.js";
 
 // Session-based user info
 const lsData = JSON.parse(localStorage.getItem("web.fc.utm.my_usersession"));
 if (lsData) {
-    userName.value = lsData.full_name;
-    userMatric.value = lsData.login_name;
+  userName.value = lsData.full_name;
+  userMatric.value = lsData.login_name;
 }
 
-// Dummy lecturer clash data
-const lecturerClashes = ref([
-    {
-        name: "AHMAD FARIZ BIN ALI",
-        sections: 5,
-        conflicts: [
-            "SECR1013-2:SCSR1013-1 (Wed 2pm-3pm)",
-            "SECR1013-2:SCSR1013-3 (Mon 8am-9am)",
-            "SECR1013-2:SCSR1013-2 (Mon 9am-10am)",
-            "SCSR1033-4:SCSR1033-3 (Tue 12pm-1pm)",
-            "SCSR1033-4:SCSR1033-3 (Wed 9am-10am)",
-        ],
-        suggestions: 0,
-    },
-    {
-        name: "CHAN WENG HOWE",
-        sections: 4,
-        conflicts: [
-            "MCST1103-1:MCSD2123-1 (Mon 4pm-5pm)",
-            "MCST1103-1:MCSD2123-1 (Mon 2pm-3pm)",
-        ],
-        suggestions: 0,
-    },
-    {
-        name: "FARKHANA BINTI MUCHTAR",
-        sections: 3,
-        conflicts: [
-            "SECR2043-9:SECR2043-7 (Tue 8am-9am)",
-            "SECR2043-9:SECR2043-8 (Thu 11am-12pm)",
-            "SECR2043-9:SECR2043-8 (Thu 12pm-1pm)",
-        ],
-        suggestions: 7,
-    },
-    {
-        name: "ABDUL RASHEED KHAN BIN YUSOF KHAN",
-        sections: 4,
-        conflicts: [
-            "MCSD1123-1:MCST1033-1 (Wed 10am-11am)",
-            "MCSD1123-1:MCST1033-1 (Wed 12pm-1pm)",
-        ],
-        suggestions: 0,
-    },
-    {
-        name: "ABDUL RASHEED KHAN BIN YUSOF KHAN",
-        sections: 3,
-        conflicts: [
-            "SCST1223-5:SCST1223-4 (Wed 11am-12pm)",
-            "SCST1223-5:SCST1223-4 (Wed 12pm-1pm)",
-        ],
-        suggestions: 1,
-    },
-]);
+const lecturerClashes = ref([]);
+const loading = ref(false);
+const error = ref(null);
+const page = ref(1);
+const limit = 1;
+const total = ref(0);
+const sesi = ref("");
+const semester = ref("");
+const totalPages = ref(1);
+
+async function loadPage(pageNum) {
+  try {
+    loading.value = true;
+    error.value = null;
+    if (!sesi.value || !semester.value) {
+      const semesterApi = new SemesterApi();
+      const semesterInfo = await semesterApi.getCurrentSemesterInfo();
+      sesi.value = semesterInfo[0].sesi;
+      semester.value = semesterInfo[0].semester;
+    }
+    const offset = (pageNum - 1) * limit;
+    const { results, total: totalLect } = await fetchLecturerClashBatch(sesi.value, semester.value, offset, limit);
+    lecturerClashes.value = results;
+    total.value = totalLect;
+    totalPages.value = Math.ceil(totalLect / limit) || 1;
+    page.value = pageNum;
+  } catch (err) {
+    error.value = "Gagal memuat data clash dosen.";
+  } finally {
+    loading.value = false;
+  }
+}
+
+function prevPage() {
+  if (page.value > 1) loadPage(page.value - 1);
+}
+function nextPage() {
+  if (page.value < totalPages.value) loadPage(page.value + 1);
+}
+
+onMounted(() => {
+  loadPage(1);
+});
 </script>
 
 <template>
-    <div class="bg-gray-100 min-h-screen pt-30">
-        <Toggle />
+  <div class="bg-gradient-to-b from-gray-50 to-white min-h-screen pt-24 transition-all duration-300">
+    <Toggle titleBanner="Lecturer Clash" />
 
-        <!-- Header Banner -->
-        <main>
+    <main class="px-6 py-6">
+      <div class="overflow-x-auto bg-white rounded-xl shadow-lg">
+        <table class="w-full text-sm text-left table-auto">
+          <thead class="bg-[#933b3b] text-white text-center">
+            <tr>
+              <th class="px-4 py-2 border-r">Bil</th>
+              <th class="px-4 py-2 border-r">Nama</th>
+              <th class="px-4 py-2 border-r">Bil Seksyen</th>
+              <th class="px-4 py-2 border-r">Pertindihan Jadual</th>
+              <th class="px-4 py-2">Cadangan</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="lecturerClashes.length === 0 && loading">
+              <td colspan="5" class="text-center py-4">Loading...</td>
+            </tr>
+            <tr v-else-if="error">
+              <td colspan="5" class="text-center py-4 text-red-600">{{ error }}</td>
+            </tr>
+            <tr
+              v-for="(lecturer, index) in lecturerClashes"
+              :key="index"
+              class="text-center even:bg-gray-50"
+            >
+              <td class="px-4 py-2 border-r">
+                {{ (page - 1) * limit + index + 1 }}
+              </td>
+              <td class="px-4 py-2 border-r font-medium text-[#933b3b]">
+                {{ lecturer.name }}
+              </td>
+              <td class="px-4 py-2 border-r">
+                {{ lecturer.sections }}
+              </td>
+              <td class="px-4 py-2 border-r text-left">
+                <ul class="list-disc list-inside text-sm text-gray-700">
+                  <li v-for="(clash, i) in lecturer.conflicts" :key="i">
+                    {{ clash }}
+                  </li>
+                  <li v-if="lecturer.conflicts.length === 0" class="text-gray-400">-</li>
+                </ul>
+              </td>
+              <td class="px-4 py-2 font-semibold text-[#933b3b]">
+                {{ lecturer.suggestions }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-            <!-- Clash Table -->
-            <div class="overflow-x-auto px-4 py-4">
-                <table
-                    class="w-full border border-black text-sm text-center bg-[#d0e7f7]"
-                >
-                    <thead class="bg-[#b8d4ea]">
-                        <tr>
-                            <th class="border border-black px-2 py-1">Bil</th>
-                            <th class="border border-black px-2 py-1">Nama</th>
-                            <th class="border border-black px-2 py-1">
-                                Bil Seksyen
-                            </th>
-                            <th class="border border-black px-2 py-1">
-                                Pertindihan Jadual
-                            </th>
-                            <th class="border border-black px-2 py-1">
-                                Cadangan
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr
-                            v-for="(lecturer, index) in lecturerClashes"
-                            :key="index"
-                        >
-                            <td class="border border-black px-2 py-1">
-                                {{ index + 1 }}
-                            </td>
-                            <td class="border border-black px-2 py-1">
-                                {{ lecturer.name }}
-                            </td>
-                            <td class="border border-black px-2 py-1">
-                                {{ lecturer.sections }}
-                            </td>
-                            <td class="border border-black px-2 py-1 text-left">
-                                <ul class="list-disc list-inside text-sm">
-                                    <li
-                                        v-for="(clash, i) in lecturer.conflicts"
-                                        :key="i"
-                                    >
-                                        {{ clash }}
-                                    </li>
-                                </ul>
-                            </td>
-                            <td
-                                class="border border-black px-2 py-1 font-semibold"
-                            >
-                                {{ lecturer.suggestions }}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+      <!-- Pagination Controls -->
+      <div class="flex flex-wrap justify-center items-center gap-4 mt-6 text-sm">
+        <button
+          @click="prevPage"
+          :disabled="page === 1 || loading"
+          class="bg-[#933b3b] text-white font-semibold py-1 px-4 rounded-lg disabled:bg-gray-300 disabled:text-gray-500"
+        >
+          &larr; Prev
+        </button>
+        <span>Page {{ page }} of {{ totalPages }}</span>
+        <button
+          @click="nextPage"
+          :disabled="page === totalPages || loading"
+          class="bg-[#933b3b] text-white font-semibold py-1 px-4 rounded-lg disabled:bg-gray-300 disabled:text-gray-500"
+        >
+          Next &rarr;
+        </button>
+        <span v-if="loading" class="ml-2 text-gray-500">Loading...</span>
+      </div>
+    </main>
 
-            <!-- Pagination -->
-            <div class="text-sm flex justify-center py-4 space-x-2">
-                <button>&lt;&lt;</button>
-                <button class="font-bold underline">1</button>
-                <button>2</button>
-                <button>3</button>
-                <button>4</button>
-                <button>&gt;&gt;</button>
-            </div>
-        </main>
-       <!-- Footer -->
+    <!-- Footer -->
     <p class="text-xs text-center mt-6 px-4 text-gray-600">
       If you have any comments or questions regarding this webpage, please contact
-      <a href="mailto:ttms@fc.utm.my" class="text-red-600">ttms@fc.utm.my</a>.<br />
+      <a href="mailto:ttms@fc.utm.my" class="text-[#933b3b] underline">ttms@fc.utm.my</a>.<br />
       &copy; 2002–2025, Faculty of Computing, UTM. All rights reserved.
     </p>
-    </div>
+  </div>
 </template>
