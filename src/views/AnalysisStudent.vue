@@ -1,154 +1,150 @@
-<script setup>
-import { ref, onMounted } from "vue";
-import SemesterApi from "@/api/SemesterApi";
-import Toggle from "@/components/Toggle.vue";
-import { userInfo, userName, userMatric } from "@/constants/ApiConstants.js";
-import ProfileBanner from "@/components/ProfileBanner.vue";
+<template>
+  <div class="p-4 mt-16">
+    <!-- Header + Pagination -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+      <h1 class="text-xl font-bold text-red-800 flex items-center gap-2">
+        👥 Analisis Jadual Pelajar Mengikut Subjek & Seksyen
+      </h1>
 
+      <div class="flex items-center gap-2">
+        <button class="px-2 py-1 border rounded disabled:opacity-50" :disabled="currentPage === 1" @click="currentPage = 1">«</button>
+        <button class="px-2 py-1 border rounded disabled:opacity-50" :disabled="currentPage === 1" @click="currentPage--">‹</button>
+        <span class="text-sm">Page</span>
+        <input v-model.number="currentPage" type="number" class="w-14 text-center border rounded px-2 py-1 text-sm" :min="1" :max="totalPages" />
+        <span class="text-sm">of {{ totalPages }}</span>
+        <button class="px-2 py-1 border rounded disabled:opacity-50" :disabled="currentPage === totalPages" @click="currentPage++">›</button>
+        <button class="px-2 py-1 border rounded disabled:opacity-50" :disabled="currentPage === totalPages" @click="currentPage = totalPages">»</button>
+      </div>
+    </div>
 
-// Session data
-const lsData = JSON.parse(localStorage.getItem("web.fc.utm.my_usersession"));
-if (lsData) {
-    userName.value = lsData.full_name;
-    userMatric.value = lsData.login_name;
-}
+    <!-- Table -->
+    <div class="overflow-x-auto bg-white rounded-xl shadow p-4">
+      <table class="min-w-full text-sm text-left border border-gray-300">
+        <thead class="bg-red-800 text-white text-sm">
+          <tr>
+            <th class="px-4 py-2 text-left">🔢 Bil.</th>
+            <th class="px-4 py-2 text-left">📘 Kod Subjek</th>
+            <th class="px-4 py-2 text-left">📖 Nama Subjek</th>
+            <th class="px-4 py-2 text-left">📑 Seksyen</th>
+            <th class="px-4 py-2 text-left">👩‍🏫 Pensyarah</th>
+            <th class="px-4 py-2 text-left">👥 Bil. Pelajar</th>
+          </tr>
+        </thead>
+        <tbody v-if="paginatedData.length">
+          <tr
+            v-for="(item, index) in paginatedData"
+            :key="`${item.kod_subjek}-${item.seksyen}-${index}`"
+            :class="index % 2 === 0 ? 'bg-[#f5f5f5]' : ''"
+            class="border-b border-gray-200 hover:bg-gray-100 text-sm"
+          >
+            <td class="px-4 py-2">{{ (currentPage - 1) * perPage + index + 1 }}</td>
+            <td class="px-4 py-2 text-red-700 font-semibold">{{ item.kod_subjek }}</td>
+            <td class="px-4 py-2">{{ item.nama_subjek }}</td>
+            <td class="px-4 py-2">{{ item.seksyen }}</td>
+            <td class="px-4 py-2">{{ item.pensyarah }}</td>
+            <td class="px-4 py-2 text-blue-700 font-medium">
+              <span v-if="item.bil_pelajar !== undefined">{{ item.bil_pelajar }}</span>
+              <span v-else class="text-gray-400 animate-pulse">...</span>
+            </td>
+          </tr>
+        </tbody>
+        <tbody v-else>
+          <tr>
+            <td colspan="6" class="text-center py-4 text-gray-400">Memuat data...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</template>
 
-// Sample subject data
-const subjectList = ref([
-    {
-        code: "SCSE1013",
-        name: "Business Intelligence and Analytics",
-        section: "1",
-        lecturer: "NOR ERNE NAZIRA BINTI BAZIN",
-        students: 23,
-    },
-    {
-        code: "SCSE1013",
-        name: "Research Design and Analysis Data Science",
-        section: "1",
-        lecturer: "MOHD SHAHAIZAN BIN OTHMAN",
-        students: 30,
-    },
-    {
-        code: "SCSE1203",
-        name: "Statistic for Data Science",
-        section: "1",
-        lecturer: "MOHAMAD SHUKOR BIN TALIB",
-        students: 0,
-    },
-    {
-        code: "SCSE1203",
-        name: "Big Data Management",
-        section: "1",
-        lecturer: "NOR AZIZAH BT. ALI",
-        students: 34,
-    },
-    {
-        code: "SCSE1203",
-        name: "Big Data Management",
-        section: "1",
-        lecturer: "NOORFA HASZLINNA BT. MUSTAFFA",
-        students: 25,
-    },
-    {
-        code: "SCSE1224",
-        name: "Advanced Analytics for Data Science",
-        section: "1",
-        lecturer: "NOR HAIZAN BT. MOHAMED RADZI",
-        students: 0,
-    },
-    // Add more if needed
-]);
+<script>
+import {
+  fetchCurrentSession,
+  fetchSessionId,
+  fetchSubjectSections,
+  fetchSubjectStudentCount,
+} from "@/api/StudentAnalysisApi";
 
-// Handle click
-const showStudentDetails = (subject) => {
-    alert(
-        `Show details for ${subject.code} - ${subject.name}\nBil. Pelajar: ${subject.students}`
-    );
+export default {
+  name: "AnalysisStudent",
+  data() {
+    return {
+      subjects: [],
+      currentPage: 1,
+      perPage: 20,
+    };
+  },
+  computed: {
+    paginatedData() {
+      const start = (this.currentPage - 1) * this.perPage;
+      return this.subjects.slice(start, start + this.perPage);
+    },
+    totalPages() {
+      return Math.max(1, Math.ceil(this.subjects.length / this.perPage));
+    },
+  },
+  async mounted() {
+    try {
+      const { sesi, semester } = await fetchCurrentSession();
+      const sessionId = await fetchSessionId();
+      console.log("📌 Session ID:", sessionId);
+
+      const rawSubjects = await fetchSubjectSections(sesi, semester);
+      const flattened = [];
+
+      rawSubjects.forEach((subject) => {
+        const kod_subjek = subject.kod_subjek || "-";
+        const nama_subjek = subject.nama_subjek || "-";
+
+        if (Array.isArray(subject.seksyen_list)) {
+          subject.seksyen_list.forEach((seksyen) => {
+            flattened.push({
+              kod_subjek: kod_subjek.trim(),
+              nama_subjek,
+              seksyen: `${seksyen.seksyen || "-"}`,
+              pensyarah: seksyen.pensyarah || "-",
+              bil_pelajar: undefined,
+            });
+          });
+        }
+      });
+
+      this.subjects = flattened;
+
+      const fetchTasks = flattened.map(async (item) => {
+        const bil = await fetchSubjectStudentCount(
+          sessionId,
+          item.kod_subjek,
+          item.seksyen,
+          sesi,
+          semester
+        );
+
+        const matchIndex = this.subjects.findIndex(
+          (s) =>
+            s.kod_subjek === item.kod_subjek &&
+            s.seksyen === item.seksyen
+        );
+
+        if (matchIndex !== -1) {
+          this.$set(this.subjects[matchIndex], "bil_pelajar", bil);
+        }
+      });
+
+      await Promise.allSettled(fetchTasks);
+      console.log("✅ Semua bil_pelajar dimuat.");
+    } catch (error) {
+      console.error("❌ Gagal memuat data student analysis:", error);
+    }
+  },
 };
 </script>
 
-<template>
-    <div class="bg-gray-100 min-h-screen pt-30">
-        <Toggle />
-
-        <!-- Main Content -->
-        <main>
-
-            <!-- Table -->
-            <div class="overflow-x-auto px-4 py-4">
-                <table
-                    class="w-full border border-black text-sm text-center bg-[#d0e7f7]"
-                >
-                    <thead class="bg-[#b8d4ea]">
-                        <tr>
-                            <th class="border border-black px-2 py-1">Bil</th>
-                            <th class="border border-black px-2 py-1">
-                                Subject Code
-                            </th>
-                            <th class="border border-black px-2 py-1">
-                                Subject Name
-                            </th>
-                            <th class="border border-black px-2 py-1">
-                                Section
-                            </th>
-                            <th class="border border-black px-2 py-1">
-                                Lecturer
-                            </th>
-                            <th class="border border-black px-2 py-1">
-                                Num. of Student
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr
-                            v-for="(subject, index) in subjectList"
-                            :key="index"
-                        >
-                            <td class="border border-black px-2 py-1">
-                                {{ index + 1 }}
-                            </td>
-                            <td class="border border-black px-2 py-1">
-                                {{ subject.code }}
-                            </td>
-                            <td class="border border-black px-2 py-1">
-                                {{ subject.name }}
-                            </td>
-                            <td class="border border-black px-2 py-1">
-                                {{ subject.section }}
-                            </td>
-                            <td class="border border-black px-2 py-1">
-                                {{ subject.lecturer }}
-                            </td>
-                            <td class="border border-black px-2 py-1">
-                                <a
-                                    href="#"
-                                    @click.prevent="showStudentDetails(subject)"
-                                    class="text-blue-600 underline hover:text-blue-800"
-                                >
-                                    {{ subject.students }}
-                                </a>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Pagination -->
-            <div class="text-sm flex justify-center py-4 space-x-2">
-                <button>&lt;&lt;</button>
-                <button class="font-bold underline">1</button>
-                <button>2</button>
-                <button>3</button>
-                <button>4</button>
-                <button>&gt;&gt;</button>
-            </div>
-        </main>
-        <!-- Footer -->
-    <p class="text-xs text-center mt-6 px-4 text-gray-600">
-      If you have any comments or questions regarding this webpage, please contact
-      <a href="mailto:ttms@fc.utm.my" class="text-red-600">ttms@fc.utm.my</a>.<br />
-      &copy; 2002–2025, Faculty of Computing, UTM. All rights reserved.
-    </p>
-    </div>
-</template>
+<style scoped>
+table th,
+table td {
+  white-space: nowrap;
+  font-size: 13px;
+}
+</style>
