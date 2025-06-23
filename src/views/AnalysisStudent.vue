@@ -43,8 +43,7 @@
             <td class="px-4 py-2">{{ item.seksyen }}</td>
             <td class="px-4 py-2">{{ item.pensyarah }}</td>
             <td class="px-4 py-2 text-blue-700 font-medium">
-              <span v-if="item.bil_pelajar !== undefined">{{ item.bil_pelajar }}</span>
-              <span v-else class="text-gray-400 animate-pulse">...</span>
+              {{ item.bil_pelajar }}
             </td>
           </tr>
         </tbody>
@@ -61,9 +60,7 @@
 <script>
 import {
   fetchCurrentSession,
-  fetchSessionId,
   fetchSubjectSections,
-  fetchSubjectStudentCount,
 } from "@/api/StudentAnalysisApi";
 
 export default {
@@ -87,9 +84,6 @@ export default {
   async mounted() {
     try {
       const { sesi, semester } = await fetchCurrentSession();
-      const sessionId = await fetchSessionId();
-      console.log("📌 Session ID:", sessionId);
-
       const rawSubjects = await fetchSubjectSections(sesi, semester);
       const flattened = [];
 
@@ -99,41 +93,20 @@ export default {
 
         if (Array.isArray(subject.seksyen_list)) {
           subject.seksyen_list.forEach((seksyen) => {
+            const pelajarList = seksyen.pelajar || seksyen.pelajar_list || [];
             flattened.push({
               kod_subjek: kod_subjek.trim(),
               nama_subjek,
               seksyen: `${seksyen.seksyen || "-"}`,
               pensyarah: seksyen.pensyarah || "-",
-              bil_pelajar: undefined,
+              bil_pelajar: seksyen.bil_pelajar ?? 0,
             });
           });
         }
       });
 
       this.subjects = flattened;
-
-      const fetchTasks = flattened.map(async (item) => {
-        const bil = await fetchSubjectStudentCount(
-          sessionId,
-          item.kod_subjek,
-          item.seksyen,
-          sesi,
-          semester
-        );
-
-        const matchIndex = this.subjects.findIndex(
-          (s) =>
-            s.kod_subjek === item.kod_subjek &&
-            s.seksyen === item.seksyen
-        );
-
-        if (matchIndex !== -1) {
-          this.$set(this.subjects[matchIndex], "bil_pelajar", bil);
-        }
-      });
-
-      await Promise.allSettled(fetchTasks);
-      console.log("✅ Semua bil_pelajar dimuat.");
+      console.log("✅ Semua bil_pelajar dimuat dari seksyen_list.");
     } catch (error) {
       console.error("❌ Gagal memuat data student analysis:", error);
     }
