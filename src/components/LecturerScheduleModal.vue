@@ -1,4 +1,3 @@
-<!-- src/components/LecturerScheduleModal.vue -->
 <template>
   <div
     v-if="visible"
@@ -7,157 +6,139 @@
     <div
       class="bg-white w-full max-w-6xl rounded-xl p-6 shadow-xl max-h-[90vh] overflow-y-auto pointer-events-auto"
     >
+      <!-- Header -->
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-semibold text-[#933b3b]">📅 Timetable: {{ lecturerName }}</h2>
-        <button @click="closeModal" class="text-red-600 font-bold text-lg hover:scale-110">&times;</button>
+        <button
+          @click="$emit('update:visible', false)"
+          class="text-red-600 font-bold text-lg hover:scale-110"
+        >
+          &times;
+        </button>
       </div>
 
-      <div v-if="loading" class="text-center text-gray-500 py-6">Loading timetable...</div>
-
-      <div v-else-if="groupedSlots">
-        <table class="w-full border text-sm table-fixed">
-          <thead>
-            <tr class="bg-[#933b3b] text-white text-center">
-              <th class="w-[90px] py-2">Time</th>
-              <th v-for="day in days" :key="day" class="py-2">{{ day }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="slot in timeSlots" :key="slot">
-              <td class="text-center border px-2 py-1 font-semibold">{{ slot }}</td>
-              <td
-                v-for="day in days"
-                :key="day + slot"
-                class="border px-2 py-1 align-top"
-              >
-                <div
-                  v-for="item in groupedSlots[day][slot]"
-                  :key="item.kod_subjek + item.masa + item.hari"
-                  class="bg-gray-100 border border-gray-300 rounded mb-1 p-1 text-xs leading-tight"
-                >
-                  <strong>{{ item.kod_subjek }}</strong><br />
-                  Section: {{ item.seksyen }}<br />
-                  {{ item.nama_bilik || 'Room: N/A' }}
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- Loading -->
+      <div v-if="isLoading" class="text-center text-gray-500 py-6">
+        Loading timetable...
       </div>
 
-      <div v-else class="text-center text-gray-400 py-6 italic">
-        No timetable data available for this lecturer in the current session.
+      <!-- Empty -->
+      <div v-else-if="slots.length === 0" class="text-center text-gray-400 py-6 italic">
+        No timetable data available.
       </div>
+<!-- Table View -->
+<div v-else>
+  <table class="w-full table-fixed border text-sm border-collapse">
+    <thead>
+      <tr class="bg-[#933b3b] text-white text-center">
+        <th class="w-[90px] py-2 border">Time</th>
+        <th v-for="day in days" :key="day" class="py-2 border">{{ day }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="time in timeSlots" :key="time">
+        <td class="text-center border px-2 py-2 font-medium">{{ time }}</td>
+        <td
+          v-for="day in days"
+          :key="day + time"
+          class="border px-2 py-1 align-top min-h-[80px]"
+        >
+          <div
+            v-for="slot in scheduleMap[day]?.[time] || []"
+            :key="slot.id_jws"
+            class="bg-gray-100 border border-gray-300 rounded mb-1 p-1 text-xs leading-tight"
+          >
+            <div class="font-semibold text-[#933b3b]">{{ slot.kod_subjek }}</div>
+            <div>Section: {{ slot.seksyen }}</div>
+            <div>Room: {{ slot.ruang?.kod || 'N/A' }}</div>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch } from "vue"
-import { fetchCurrentSession, fetchLecturerSections, fetchSchedule } from "@/api/LecturerApi.js"
+import { ref, onMounted } from "vue";
+import timetableApi from "@/api/TimetableApi";
+import LecturerSubjectApi from "@/api/LecturerSubjectApi";
+import { fetchCurrentSession } from "@/api/LecturerApi";
 
 const props = defineProps({
   visible: Boolean,
   lecturerName: String,
   noPekerja: String,
-  sessionId: String
-})
-const emit = defineEmits(["update:visible"])
+  sessionId: String,
+});
 
-const loading = ref(false)
-const schedule = ref([])
-const groupedSlots = ref(null)
-
-const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const timeSlots = [
   "07:00 - 07:50", "08:00 - 08:50", "09:00 - 09:50", "10:00 - 10:50",
   "11:00 - 11:50", "12:00 - 12:50", "13:00 - 13:50", "14:00 - 14:50",
-  "15:00 - 15:50", "16:00 - 16:50", "17:00 - 17:50", "18:00 - 18:50"
-]
+  "15:00 - 15:50", "16:00 - 16:50", 
+];
 
-const dayMap = {
-  "Ahad": "Sunday", "Isnin": "Monday", "Selasa": "Tuesday",
-  "Rabu": "Wednesday", "Khamis": "Thursday", "Jumaat": "Friday", "Sabtu": "Saturday"
-}
+const slots = ref([]);
+const scheduleMap = ref({});
+const isLoading = ref(false);
 
-const dayNumberMap = {
-  "1": "Sunday", "2": "Monday", "3": "Tuesday", "4": "Wednesday",
-  "5": "Thursday", "6": "Friday", "7": "Saturday"
-}
+onMounted(async () => {
+  isLoading.value = true;
+  try {
+    const { sesi, semester } = await fetchCurrentSession();
+    const subjectApi = new LecturerSubjectApi();
+    const timetable = new timetableApi();
 
-const periodMap = {
-  "1": "07:00 - 07:50", "2": "08:00 - 08:50", "3": "09:00 - 09:50", "4": "10:00 - 10:50",
-  "5": "11:00 - 11:50", "6": "12:00 - 12:50", "7": "13:00 - 13:50", "8": "14:00 - 14:50",
-  "9": "15:00 - 15:50", "10": "16:00 - 16:50", "11": "17:00 - 17:50", "12": "18:00 - 18:50"
-}
+    const subjectList = await subjectApi.getTimetableInfo(props.noPekerja);
+    const filtered = subjectList.filter(s => s.sesi === sesi && String(s.semester) === String(semester));
 
-function normalizeTime(t) {
-  if (typeof t === "string") {
-    if (t.includes(":")) return t
-    if (t.length === 4) return `${t.slice(0, 2)}:${t.slice(2)}`
-  }
-  return t
-}
+    const all = [];
+    for (const subject of filtered) {
+      const slotList = await timetable.getSubjectSchedule({
+        kod_subjek: subject.kod_subjek,
+        seksyen: subject.seksyen,
+        sesi,
+        semester,
+      });
 
-function formatTimeRange(start, end) {
-  return `${normalizeTime(start)} - ${normalizeTime(end)}`
-}
+      const enriched = slotList.map(slot => ({
+        ...slot,
+        kod_subjek: subject.kod_subjek,
+        nama_subjek: subject.nama_subjek,
+        kelas: subject.kelas,
+        seksyen: subject.seksyen,
+      }));
 
-function processSchedule(data) {
-  const map = {}
-  for (const day of days) {
-    map[day] = {}
-    for (const slot of timeSlots) {
-      map[day][slot] = []
+      all.push(...enriched);
     }
-  }
 
-  data.forEach(slot => {
-    const dayName = dayMap[slot.hari] || dayNumberMap[slot.hari] || slot.hari
-    const timeRange = periodMap[slot.masa] || formatTimeRange(slot.masa_mula, slot.masa_tamat)
+    slots.value = all;
 
-    if (map[dayName] && map[dayName][timeRange]) {
-      map[dayName][timeRange].push(slot)
-    } else {
-      console.warn("⚠️ Tidak cocok:", { dayName, timeRange, slot })
+    const map = {};
+    for (const day of days) {
+      map[day] = {};
+      for (const time of timeSlots) {
+        map[day][time] = [];
+      }
     }
-  })
 
-  groupedSlots.value = map
-}
-
-watch(() => props.visible, async (val) => {
-    
-  if (val && props.noPekerja && props.sessionId) {
-    loading.value = true
-    schedule.value = []
-    groupedSlots.value = null
-
-    try {
-      const sections = await fetchLecturerSections(props.noPekerja)
-      const session = await fetchCurrentSession()
-
-      const currentSections = sections.filter(
-        sec => sec.sesi === session.sesi && String(sec.semester) === String(session.semester)
-      )
-
-      const result = await Promise.all(
-        currentSections.map(sec =>
-          fetchSchedule(sec.kod_subjek, sec.seksyen, sec.sesi, sec.semester)
-        )
-      )
-
-      schedule.value = result.flat()
-      processSchedule(schedule.value)
-    } catch (err) {
-      console.error("❌ Error fetching lecturer schedule:", err)
-    } finally {
-      loading.value = false
+    for (const slot of all) {
+      const dayName = days[parseInt(slot.hari) - 1] || "Unknown";
+      const timeLabel = timeSlots[parseInt(slot.masa) - 1] || "Unknown";
+      if (map[dayName] && map[dayName][timeLabel]) {
+        map[dayName][timeLabel].push(slot);
+      }
     }
-  }
-})
 
-function closeModal() {
-  emit("update:visible", false)
-}
+    scheduleMap.value = map;
+  } catch (e) {
+    console.error("❌ Failed to load timetable:", e);
+  } finally {
+    isLoading.value = false;
+  }
+});
 </script>
