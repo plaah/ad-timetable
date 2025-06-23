@@ -91,25 +91,33 @@ function isBooked(day, masa) {
 }
 </script>
 
+<!-- Hanya bagian <template> yang diubah -->
+
 <template>
   <div class="bg-gray-100 min-h-screen pt-30">
     <Toggle />
     <main>
-      <div class="p-4">
-        <div class="overflow-x-auto mx-auto max-w-3xl border border-black rounded-lg">
-          <table class="w-full text-sm text-center bg-[#d0e7f7]">
-            <thead>
+      <div class="p-4 max-w-5xl mx-auto">
+        <!-- Heading -->
+        <h1 class="text-xl font-bold text-red-800 mb-4 flex items-center gap-2">
+          🕒 Simulasi Tempahan Slot Ruang
+        </h1>
+
+        <!-- Jadwal Tabel -->
+        <div class="overflow-x-auto border border-black rounded-xl shadow bg-white">
+          <table class="w-full text-sm text-center bg-[#fef2f2]">
+            <thead class="bg-[#991b1b] text-white">
               <tr>
-                <th class="border border-black px-2 py-1">Day</th>
-                <th class="border border-black px-2 py-1">Num</th>
-                <th class="border border-black px-2 py-1">Time</th>
+                <th class="border border-black px-2 py-1">Hari</th>
+                <th class="border border-black px-2 py-1">Slot</th>
+                <th class="border border-black px-2 py-1">Waktu</th>
                 <th class="border border-black px-2 py-1">Status</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(row, i) in timetable" :key="row.masa">
-                <td v-if="i === 0" :rowspan="timetable.length" class="border border-black px-2 py-1">
-                  <div class="flex flex-col items-start space-y-1">
+              <tr v-for="(row, i) in timetable" :key="row.masa" class="hover:bg-gray-100">
+                <td v-if="i === 0" :rowspan="timetable.length" class="border border-black px-2 py-1 align-top">
+                  <div class="flex flex-col items-start space-y-1 pt-1">
                     <label v-for="day in days" :key="day" class="inline-flex items-center">
                       <input type="radio" :value="day" v-model="selectedDay" class="mr-2" />
                       {{ day }}
@@ -119,48 +127,63 @@ function isBooked(day, masa) {
                 <td class="border border-black px-2 py-1">{{ row.masa }}</td>
                 <td class="border border-black px-2 py-1">
                   <label class="inline-flex items-center">
-                    <input type="checkbox" :value="row.waktu" v-model="selectedTimes" class="mr-2" :disabled="isBooked(selectedDay, row.masa)" />
+                    <input
+                      type="checkbox"
+                      :value="row.waktu"
+                      v-model="selectedTimes"
+                      class="mr-2"
+                      :disabled="isBooked(selectedDay, row.masa)"
+                    />
                     {{ row.waktu }}
                   </label>
                 </td>
-                <td class="border border-black px-2 py-1">
-                  <span v-if="isBooked(selectedDay, row.masa)">Booked</span>
-                  <span v-else>Available</span>
+                <td class="border border-black px-2 py-1 font-semibold">
+                  <span v-if="isBooked(selectedDay, row.masa)" class="text-red-600">Booked</span>
+                  <span v-else class="text-green-700">Available</span>
                 </td>
               </tr>
             </tbody>
           </table>
-          <div class="flex gap-4 mt-4">
-            <label class="inline-flex items-center">
-              <input type="radio" value="kuliah" v-model="selectedWeek" class="mr-2" />
-              Minggu Kuliah
-              <span class="text-xs ml-2">{{ mingguKuliah.start }} ↔ {{ mingguKuliah.end }}</span>
-            </label>
-            <label class="inline-flex items-center">
-              <input type="radio" value="seminggu" v-model="selectedWeek" class="mr-2" />
-              Minggu Semasa
-              <span class="text-xs ml-2">{{ mingguSemasa.start }} ↔ {{ mingguSemasa.end }}</span>
-            </label>
-            <label class="inline-flex items-center">
-              <input type="radio" value="manual" v-model="selectedWeek" class="mr-2" />
-              Input Pengguna
-              <input v-model="userStart" type="date" class="border px-1 py-0.5 text-xs ml-2" />
-              <span class="text-xs mx-1">↔</span>
-              <input v-model="userEnd" type="date" class="border px-1 py-0.5 text-xs" />
-            </label>
-          </div>
         </div>
+
+        <!-- Pilih Minggu -->
+        <div class="mt-6 bg-white border border-black rounded-xl p-4 flex flex-wrap gap-4 text-sm">
+          <label class="inline-flex items-center">
+            <input type="radio" value="kuliah" v-model="selectedWeek" class="mr-2" />
+            Minggu Kuliah
+            <span class="text-xs ml-2 text-gray-600">({{ mingguKuliah.start }} – {{ mingguKuliah.end }})</span>
+          </label>
+          <label class="inline-flex items-center">
+            <input type="radio" value="seminggu" v-model="selectedWeek" class="mr-2" />
+            Minggu Semasa
+            <span class="text-xs ml-2 text-gray-600">({{ mingguSemasa.start }} – {{ mingguSemasa.end }})</span>
+          </label>
+          <label class="inline-flex items-center">
+            <input type="radio" value="manual" v-model="selectedWeek" class="mr-2" />
+            Manual
+            <input v-model="userStart" type="date" class="border px-1 py-0.5 text-xs ml-2" />
+            <span class="text-xs mx-1">↔</span>
+            <input v-model="userEnd" type="date" class="border px-1 py-0.5 text-xs" />
+          </label>
+        </div>
+
+        <!-- Tombol Submit -->
         <div class="text-center mt-6">
-          <button @click="handleSubmit" class="bg-blue-800 text-white text-lg font-bold py-2 px-8 rounded-lg hover:bg-blue-900">
-            Send
+          <button
+            @click="handleSubmit"
+            class="bg-[#991b1b] text-white text-lg font-bold py-2 px-8 rounded-lg hover:bg-[#7f1d1d]"
+          >
+            Hantar Permintaan
           </button>
         </div>
       </div>
     </main>
+
+    <!-- Footer -->
     <p class="text-xs text-center mt-6 px-4 text-gray-600">
-      If you have any comments or questions regarding this webpage, please contact
+      Any comments or questions? Contact
       <a href="mailto:ttms@fc.utm.my" class="text-red-600">ttms@fc.utm.my</a>.<br />
-      Copyright &copy; 2002–2025, Faculty of Computing, UTM. All rights reserved.
+      &copy; 2002–2025, Faculty of Computing, UTM. All rights reserved.
     </p>
   </div>
 </template>
