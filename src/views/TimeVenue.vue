@@ -95,12 +95,12 @@ function isBooked(day, masa) {
 
 <template>
   <div class="bg-gray-100 min-h-screen pt-30">
-    <Toggle />
+    <Toggle titleBanner="Time Venue" />
     <main>
       <div class="p-4 max-w-5xl mx-auto">
         <!-- Heading -->
         <h1 class="text-xl font-bold text-red-800 mb-4 flex items-center gap-2">
-          🕒 Simulasi Tempahan Slot Ruang
+          🕒 Tempahan Slot Ruang
         </h1>
 
         <!-- Jadwal Tabel -->

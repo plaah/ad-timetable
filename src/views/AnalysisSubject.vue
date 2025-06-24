@@ -1,6 +1,6 @@
 <template>
   <div class="p-4 mt-16">
-    <Toggle titleBanner="Subject Analysis" />
+    <Toggle titleBanner="Analysis Subject" />
     
     <!-- Header + Search + Pagination -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
@@ -90,6 +90,7 @@ import {
   fetchSessionId,
   fetchSubjectSections,
 } from "@/api/SubjectAnalysisApi";
+import Toggle from "@/components/Toggle.vue";
 
 export default {
   name: "AnalysisSubject",

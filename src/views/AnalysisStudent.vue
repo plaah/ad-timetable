@@ -70,6 +70,7 @@ import {
   fetchCurrentSession,
   fetchSubjectSections,
 } from "@/api/StudentAnalysisApi";
+import Toggle from "@/components/Toggle.vue";
 
 export default {
   name: "AnalysisStudent",
