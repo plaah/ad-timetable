@@ -3,6 +3,7 @@ import { ref, watch, onMounted, computed } from "vue";
 import Toggle from "@/components/Toggle.vue";
 import VenueApi from "@/api/VenueApi";
 import VenueScheduleModal from "@/components/VenueScheduleModal.vue";
+import InfoCard from "@/components/InfoCard.vue";
 import { userName, userMatric } from "@/constants/ApiConstants.js";
 
 // Load user session if available
@@ -83,32 +84,19 @@ function openModal(room) {
     <Toggle titleBanner="Venue" />
 
     <!-- Filters & Pagination -->
-    <div class="flex flex-col md:flex-row justify-between items-center gap-4 px-4 py-4 max-w-6xl mx-auto">
-      <div class="flex flex-wrap items-center gap-2">
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-2 md:gap-4 px-4 py-4 max-w-6xl mx-auto">
+      <div class="w-full md:w-auto flex flex-wrap items-center gap-2 mb-2 md:mb-0">
         <label class="font-normal">Faculty:</label>
         <select v-model="selectedFaculty" class="border border-gray-400 rounded px-2 py-1 shadow-sm">
           <option value="FSKSM">FSKSM</option>
           <option value="FKE">FKE</option>
           <option value="FABU">FABU</option>
         </select>
-
         <input
           v-model="searchQuery"
           placeholder="Search by room code or name..."
-          class="border border-gray-400 rounded px-3 py-1 w-72 shadow-sm"
+          class="border border-gray-400 rounded px-3 py-1 w-full md:w-72 shadow-sm"
         />
-      </div>
-
-      <div class="flex items-center gap-1 text-sm font-[Segoe UI]">
-        <button @click="setPage(1)" :disabled="currentPage === 1" class="px-2 py-1 border rounded">&laquo;</button>
-        <button @click="setPage(currentPage - 1)" :disabled="currentPage === 1" class="px-2 py-1 border rounded">&lt;</button>
-        <span>Page</span>
-        <select v-model="currentPage" @change="setPage(Number(currentPage))" class="px-2 py-1 border rounded">
-          <option v-for="page in totalPages" :key="page" :value="page">{{ page }}</option>
-        </select>
-        <span>of {{ totalPages }}</span>
-        <button @click="setPage(currentPage + 1)" :disabled="currentPage === totalPages" class="px-2 py-1 border rounded">&gt;</button>
-        <button @click="setPage(totalPages)" :disabled="currentPage === totalPages" class="px-2 py-1 border rounded">&raquo;</button>
       </div>
     </div>
 
@@ -118,44 +106,39 @@ function openModal(room) {
     </div>
 
     <!-- Room Cards -->
-    <div class="grid gap-4 px-4 py-4 max-w-6xl mx-auto grid-cols-1 md:grid-cols-2 lg:grid-cols-2">
-      <div
+    <div v-if="loading" class="text-center text-gray-500 py-10">Loading...</div>
+    <div v-else class="grid gap-4 px-4 py-4 max-w-6xl mx-auto grid-cols-1 md:grid-cols-2 lg:grid-cols-2">
+      <InfoCard
         v-for="(room, index) in paginatedRooms"
         :key="index"
-        class="bg-white border border-red-200 hover:shadow-md rounded-xl transition p-4 space-y-2 cursor-pointer"
-        @click="openModal(room)"
+        :icon="'🏷️'"
+        :title="room.code"
+        :subtitle="room.name + (room.shortName && room.shortName !== room.name ? ` (${room.shortName})` : '')"
+        :badges="[
+          { icon: '🎓', text: room.faculty || 'Unknown', class: 'bg-red-50 text-red-800 border border-red-200' },
+          { icon: '🏢', text: room.type || 'Room', class: 'bg-gray-100 border border-gray-300' },
+          { icon: '👥', text: `Capacity: ${room.capacity || 'N/A'}`, class: 'bg-blue-50 border border-blue-200' }
+        ]"
+        :actions="[{ label: 'View Schedule', onClick: () => openModal(room) }]"
+      />
+      <div v-if="!loading && !paginatedRooms.length" class="text-center text-gray-400 italic py-10 col-span-full">No venue found</div>
+    </div>
+    <!-- Pagination (always below, all devices) -->
+    <div class="flex justify-center mt-2 mb-2 w-full gap-1">
+      <button @click="setPage(1)" :disabled="currentPage === 1" :class="['px-2 py-1 border rounded font-semibold transition', currentPage === 1 ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-white text-[#e11d48] border-[#e11d48] hover:bg-[#e11d48] hover:text-white']">&laquo;</button>
+      <button @click="setPage(currentPage - 1)" :disabled="currentPage === 1" :class="['px-2 py-1 border rounded font-semibold transition', currentPage === 1 ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-white text-[#e11d48] border-[#e11d48] hover:bg-[#e11d48] hover:text-white']">&lt;</button>
+      <span class="mx-2 font-semibold">Page</span>
+      <select
+        v-model="currentPage"
+        @change="setPage(Number(currentPage))"
+        class="px-2 py-1 border rounded font-semibold text-[#e11d48] border-[#e11d48] bg-white hover:bg-[#fef2f2] transition"
+        style="min-width: 48px;"
       >
-        <div class="flex justify-between items-start">
-          <div class="flex items-center gap-2">
-            <span class="text-lg">🏷️</span>
-            <div class="text-lg font-semibold text-red-700">{{ room.code }}</div>
-          </div>
-        </div>
-
-        <div class="font-medium text-gray-800">
-          {{ room.name }}
-          <span v-if="room.shortName && room.shortName !== room.name" class="text-sm text-gray-500">
-            ({{ room.shortName }})
-          </span>
-        </div>
-
-        <div class="flex gap-3 mt-3 text-sm text-gray-600 flex-wrap">
-          <div class="flex items-center gap-1 bg-red-50 px-2 py-1 rounded text-red-800 border border-red-200">
-            <span class="text-lg">🎓</span>
-            {{ room.faculty || 'Unknown' }}
-          </div>
-
-          <div class="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded border border-gray-300">
-            <span class="text-lg">🏢</span>
-            {{ room.type || 'Room' }}
-          </div>
-
-          <div class="flex items-center gap-1 bg-blue-50 px-2 py-1 rounded border border-blue-200">
-            <span class="text-lg">👥</span>
-            Capacity: {{ room.capacity || 'N/A' }}
-          </div>
-        </div>
-      </div>
+        <option v-for="page in totalPages" :key="page" :value="page">{{ page }}</option>
+      </select>
+      <span class="mx-2 font-semibold">of {{ totalPages }}</span>
+      <button @click="setPage(currentPage + 1)" :disabled="currentPage === totalPages" :class="['px-2 py-1 border rounded font-semibold transition', currentPage === totalPages ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-white text-[#e11d48] border-[#e11d48] hover:bg-[#e11d48] hover:text-white']">&gt;</button>
+      <button @click="setPage(totalPages)" :disabled="currentPage === totalPages" :class="['px-2 py-1 border rounded font-semibold transition', currentPage === totalPages ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-white text-[#e11d48] border-[#e11d48] hover:bg-[#e11d48] hover:text-white']">&raquo;</button>
     </div>
 
     <!-- Modal -->

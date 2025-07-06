@@ -5,6 +5,7 @@ import SemesterApi from "@/api/SemesterApi";
 import Toggle from "@/components/Toggle.vue";
 import { userInfo, userName, userMatric } from "@/constants/ApiConstants.js";
 import { timetable, days } from "@/constants/TimeTableConstants.js";
+import InfoCard from "@/components/InfoCard.vue";
 
 const lsData = JSON.parse(localStorage.getItem("web.fc.utm.my_usersession"));
 if (lsData) {
@@ -104,68 +105,84 @@ function isBooked(day, masa) {
         </h1>
 
         <!-- Jadwal Tabel -->
-        <div class="overflow-x-auto border border-black rounded-xl shadow bg-white">
-          <table class="w-full text-sm text-center bg-[#fef2f2]">
-            <thead class="bg-[#991b1b] text-white">
-              <tr>
-                <th class="border border-black px-2 py-1">Hari</th>
-                <th class="border border-black px-2 py-1">Slot</th>
-                <th class="border border-black px-2 py-1">Waktu</th>
-                <th class="border border-black px-2 py-1">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(row, i) in timetable" :key="row.masa" class="hover:bg-gray-100">
-                <td v-if="i === 0" :rowspan="timetable.length" class="border border-black px-2 py-1 align-top">
-                  <div class="flex flex-col items-start space-y-1 pt-1">
-                    <label v-for="day in days" :key="day" class="inline-flex items-center">
-                      <input type="radio" :value="day" v-model="selectedDay" class="mr-2" />
-                      {{ day }}
-                    </label>
-                  </div>
-                </td>
-                <td class="border border-black px-2 py-1">{{ row.masa }}</td>
-                <td class="border border-black px-2 py-1">
-                  <label class="inline-flex items-center">
-                    <input
-                      type="checkbox"
-                      :value="row.waktu"
-                      v-model="selectedTimes"
-                      class="mr-2"
-                      :disabled="isBooked(selectedDay, row.masa)"
-                    />
-                    {{ row.waktu }}
-                  </label>
-                </td>
-                <td class="border border-black px-2 py-1 font-semibold">
-                  <span v-if="isBooked(selectedDay, row.masa)" class="text-red-600">Booked</span>
-                  <span v-else class="text-green-700">Available</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <InfoCard
+          icon="📅"
+          title="Jadwal Slot Ruang"
+          :badges="[]"
+        >
+          <template #default>
+            <div class="overflow-x-auto border border-black rounded-xl shadow bg-white mt-2">
+              <table class="w-full text-sm text-center bg-[#fef2f2]">
+                <thead class="bg-[#991b1b] text-white">
+                  <tr>
+                    <th class="border border-black px-2 py-1">Hari</th>
+                    <th class="border border-black px-2 py-1">Slot</th>
+                    <th class="border border-black px-2 py-1">Waktu</th>
+                    <th class="border border-black px-2 py-1">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(row, i) in timetable" :key="row.masa" class="hover:bg-gray-100">
+                    <td v-if="i === 0" :rowspan="timetable.length" class="border border-black px-2 py-1 align-top">
+                      <div class="flex flex-col items-start space-y-1 pt-1">
+                        <label v-for="day in days" :key="day" class="inline-flex items-center">
+                          <input type="radio" :value="day" v-model="selectedDay" class="mr-2" />
+                          {{ day }}
+                        </label>
+                      </div>
+                    </td>
+                    <td class="border border-black px-2 py-1">{{ row.masa }}</td>
+                    <td class="border border-black px-2 py-1">
+                      <label class="inline-flex items-center">
+                        <input
+                          type="checkbox"
+                          :value="row.waktu"
+                          v-model="selectedTimes"
+                          class="mr-2"
+                          :disabled="isBooked(selectedDay, row.masa)"
+                        />
+                        {{ row.waktu }}
+                      </label>
+                    </td>
+                    <td class="border border-black px-2 py-1 font-semibold">
+                      <span v-if="isBooked(selectedDay, row.masa)" class="text-red-600">Booked</span>
+                      <span v-else class="text-green-700">Available</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </template>
+        </InfoCard>
 
         <!-- Pilih Minggu -->
-        <div class="mt-6 bg-white border border-black rounded-xl p-4 flex flex-wrap gap-4 text-sm">
-          <label class="inline-flex items-center">
-            <input type="radio" value="kuliah" v-model="selectedWeek" class="mr-2" />
-            Minggu Kuliah
-            <span class="text-xs ml-2 text-gray-600">({{ mingguKuliah.start }} – {{ mingguKuliah.end }})</span>
-          </label>
-          <label class="inline-flex items-center">
-            <input type="radio" value="seminggu" v-model="selectedWeek" class="mr-2" />
-            Minggu Semasa
-            <span class="text-xs ml-2 text-gray-600">({{ mingguSemasa.start }} – {{ mingguSemasa.end }})</span>
-          </label>
-          <label class="inline-flex items-center">
-            <input type="radio" value="manual" v-model="selectedWeek" class="mr-2" />
-            Manual
-            <input v-model="userStart" type="date" class="border px-1 py-0.5 text-xs ml-2" />
-            <span class="text-xs mx-1">↔</span>
-            <input v-model="userEnd" type="date" class="border px-1 py-0.5 text-xs" />
-          </label>
-        </div>
+        <InfoCard
+          icon="📆"
+          title="Pilih Minggu"
+          :badges="[]"
+        >
+          <template #default>
+            <div class="flex flex-wrap gap-4 text-sm mt-2">
+              <label class="inline-flex items-center">
+                <input type="radio" value="kuliah" v-model="selectedWeek" class="mr-2" />
+                Minggu Kuliah
+                <span class="text-xs ml-2 text-gray-600">({{ mingguKuliah.start }} – {{ mingguKuliah.end }})</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="radio" value="seminggu" v-model="selectedWeek" class="mr-2" />
+                Minggu Semasa
+                <span class="text-xs ml-2 text-gray-600">({{ mingguSemasa.start }} – {{ mingguSemasa.end }})</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="radio" value="manual" v-model="selectedWeek" class="mr-2" />
+                Manual
+                <input v-model="userStart" type="date" class="border px-1 py-0.5 text-xs ml-2" />
+                <span class="text-xs mx-1">↔</span>
+                <input v-model="userEnd" type="date" class="border px-1 py-0.5 text-xs" />
+              </label>
+            </div>
+          </template>
+        </InfoCard>
 
         <!-- Tombol Submit -->
         <div class="text-center mt-6">

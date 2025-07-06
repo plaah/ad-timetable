@@ -84,19 +84,20 @@
             No classes scheduled on {{ days[selectedDay] }}.
           </div>
           <div v-else class="space-y-3">
-            <div
+            <InfoCard
               v-for="(item, index) in daySchedule"
               :key="index"
-              class="p-3 border-l-4 rounded-md"
-              :class="item.color"
-            >
-              <div class="text-sm font-semibold text-[#933b3b]">
-                {{ item.time }} — {{ item.subjectName }}
-              </div>
-              <div class="text-xs text-gray-600">📘 {{ item.subject }}</div>
-              <div class="text-xs text-gray-500">Section: {{ item.section }}</div>
-              <div class="text-xs text-gray-500" v-if="item.room">📍 {{ item.room }}</div>
-            </div>
+              :icon="'⏰'"
+              :title="item.subjectName"
+              :subtitle="item.time"
+              :details="[
+                { icon: '📘', text: item.subject },
+                { icon: '🔢', text: `Section: ${item.section}` },
+                ...(item.room ? [{ icon: '📍', text: item.room }] : [])
+              ]"
+              :badges="[]"
+              :onCardClick="null"
+            />
           </div>
         </div>
       </transition>
@@ -147,6 +148,7 @@ import { ref, computed, onMounted, watch, inject } from 'vue';
 import Toggle from '@/components/Toggle.vue';
 import StudentSubjectApi from '@/api/StudentSubjectApi';
 import TimetableApi from '@/api/TimetableApi';
+import InfoCard from '@/components/InfoCard.vue';
 import { userMatric, userName } from '@/constants/ApiConstants';
 import { timetable, days } from '@/constants/TimeTableConstants';
 

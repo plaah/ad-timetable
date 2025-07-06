@@ -4,69 +4,51 @@
     <Toggle titleBanner="Curriculum" />
 
     <!-- Filters & Pagination -->
-    <div class="flex flex-col md:flex-row justify-between items-center gap-4 px-4 py-4 max-w-6xl mx-auto">
-      <!-- Search Bar -->
-      <div class="flex flex-wrap items-center gap-2">
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-2 md:gap-4 px-4 py-4 max-w-6xl mx-auto">
+      <div class="w-full md:w-auto flex flex-wrap items-center gap-2 mb-2 md:mb-0">
         <label class="font-normal">Search:</label>
         <input
           v-model="searchTerm"
           placeholder="Search curriculum name or session..."
-          class="border border-gray-400 rounded px-3 py-1 w-72 shadow-sm"
+          class="border border-gray-400 rounded px-3 py-1 w-full md:w-72 shadow-sm"
         />
-      </div>
-
-      <!-- Pagination -->
-      <div class="flex items-center gap-1 text-sm">
-        <button @click="gotoPage(1)" :disabled="currentPage === 1" class="px-2 py-1 border rounded">&laquo;</button>
-        <button @click="gotoPage(currentPage - 1)" :disabled="currentPage === 1" class="px-2 py-1 border rounded">&lt;</button>
-        <span>Page</span>
-        <select
-          v-model="currentPage"
-          @change="gotoPage(Number(currentPage))"
-          class="px-2 py-1 border rounded"
-        >
-          <option v-for="page in pageCount" :key="page" :value="page">{{ page }}</option>
-        </select>
-        <span>of {{ pageCount }}</span>
-        <button @click="gotoPage(currentPage + 1)" :disabled="currentPage === pageCount" class="px-2 py-1 border rounded">&gt;</button>
-        <button @click="gotoPage(pageCount)" :disabled="currentPage === pageCount" class="px-2 py-1 border rounded">&raquo;</button>
       </div>
     </div>
 
     <!-- Curriculum Cards -->
-    <div class="grid gap-4 px-4 py-4 max-w-6xl mx-auto grid-cols-1 md:grid-cols-2">
-      <div
+    <div v-if="loading" class="text-center text-gray-500 py-10">Loading...</div>
+    <div v-else class="grid gap-4 px-4 py-4 max-w-6xl mx-auto grid-cols-1 md:grid-cols-2">
+      <InfoCard
         v-for="(curr, index) in paginatedCurricula"
         :key="index"
-        class="bg-white border border-gray-200 hover:shadow-md rounded-xl p-4 space-y-3"
+        :icon="'📖'"
+        :title="curr.name"
+        :subtitle="`Session: ${curr.sesi} | Semester: ${curr.semester} | Year: ${curr.tahun}`"
+        :badges="[
+          { icon: '📚', text: `Core: ${getTerasCount(curr.id_kurikulum)}`, class: 'bg-red-50 text-red-800 border border-red-200' },
+          { icon: '🎯', text: `Elective: ${getElektifCount(curr.id_kurikulum)}`, class: 'bg-blue-50 border border-blue-200' },
+          { icon: '📊', text: `Total: ${getTotalCount(curr.id_kurikulum)}`, class: 'bg-gray-100 border border-gray-300' }
+        ]"
+        :actions="[{ label: 'View Details', onClick: () => openModal(curr) }]"
+      />
+      <div v-if="!loading && !paginatedCurricula.length" class="text-center text-gray-400 italic py-10 col-span-full">No curriculum found</div>
+    </div>
+    <!-- Pagination (always below, all devices) -->
+    <div class="flex justify-center mt-2 mb-2 w-full gap-1">
+      <button @click="gotoPage(1)" :disabled="currentPage === 1" :class="['px-2 py-1 border rounded font-semibold transition', currentPage === 1 ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-white text-[#e11d48] border-[#e11d48] hover:bg-[#e11d48] hover:text-white']">&laquo;</button>
+      <button @click="gotoPage(currentPage - 1)" :disabled="currentPage === 1" :class="['px-2 py-1 border rounded font-semibold transition', currentPage === 1 ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-white text-[#e11d48] border-[#e11d48] hover:bg-[#e11d48] hover:text-white']">&lt;</button>
+      <span class="mx-2 font-semibold">Page</span>
+      <select
+        v-model="currentPage"
+        @change="gotoPage(Number(currentPage))"
+        class="px-2 py-1 border rounded font-semibold text-[#e11d48] border-[#e11d48] bg-white hover:bg-[#fef2f2] transition"
+        style="min-width: 48px;"
       >
-        <div class="flex justify-between items-start">
-          <div class="flex items-center gap-2">
-            <span class="text-lg">📘</span>
-            <span class="text-red-700 font-semibold text-lg">{{ curr.name }}</span>
-          </div>
-          <button
-            class="text-sm bg-gray-100 hover:bg-gray-200 rounded px-2 py-1"
-            @click="openModal(curr)"
-          >
-            View Details
-          </button>
-        </div>
-
-        <div class="text-gray-800 font-medium text-base">Session: {{ curr.sesi }} | Semester: {{ curr.semester }} | Year: {{ curr.tahun }}</div>
-
-        <div class="flex flex-wrap gap-2 text-sm mt-2">
-          <span class="flex items-center gap-1 bg-red-50 text-red-800 border border-red-200 px-2 py-1 rounded">
-            📚 Core: {{ getTerasCount(curr.id_kurikulum) }}
-          </span>
-          <span class="flex items-center gap-1 bg-blue-50 border border-blue-200 px-2 py-1 rounded">
-            🎯 Elective: {{ getElektifCount(curr.id_kurikulum) }}
-          </span>
-          <span class="flex items-center gap-1 bg-gray-100 border border-gray-300 px-2 py-1 rounded">
-            📊 Total: {{ getTotalCount(curr.id_kurikulum) }}
-          </span>
-        </div>
-      </div>
+        <option v-for="page in pageCount" :key="page" :value="page">{{ page }}</option>
+      </select>
+      <span class="mx-2 font-semibold">of {{ pageCount }}</span>
+      <button @click="gotoPage(currentPage + 1)" :disabled="currentPage === pageCount" :class="['px-2 py-1 border rounded font-semibold transition', currentPage === pageCount ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-white text-[#e11d48] border-[#e11d48] hover:bg-[#e11d48] hover:text-white']">&gt;</button>
+      <button @click="gotoPage(pageCount)" :disabled="currentPage === pageCount" :class="['px-2 py-1 border rounded font-semibold transition', currentPage === pageCount ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-white text-[#e11d48] border-[#e11d48] hover:bg-[#e11d48] hover:text-white']">&raquo;</button>
     </div>
 
     <!-- Curriculum Modal -->
@@ -133,6 +115,7 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import Toggle from '@/components/Toggle.vue';
 import CurriculumApi from '@/api/CurriculumApi';
+import InfoCard from '@/components/InfoCard.vue';
 
 const curricula = ref([]);
 const curriculumSubjects = ref({});
@@ -143,6 +126,7 @@ const itemsPerPage = 6;
 const modalSubjects = ref([]);
 const showModal = ref(false);
 const modalCurriculumName = ref('');
+const loading = ref(true);
 
 onMounted(async () => {
   const api = new CurriculumApi();
@@ -173,6 +157,7 @@ onMounted(async () => {
     const subjects = await api.getSubjects(curr.id_kurikulum);
     curriculumSubjects.value[curr.id_kurikulum] = Array.isArray(subjects) ? subjects : [subjects];
   }
+  loading.value = false;
 });
 
 const filteredCurricula = computed(() => {

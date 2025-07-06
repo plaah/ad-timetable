@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted } from "vue";
 import Toggle from "@/components/Toggle.vue";
 import LecturerScheduleModal from "@/components/LecturerScheduleModal.vue";
+import InfoCard from "@/components/InfoCard.vue";
 import { userName, userMatric } from "@/constants/ApiConstants.js";
 import {
   fetchCurrentSession,
@@ -120,79 +121,51 @@ watch(searchQuery, () => {
     <Toggle titleBanner="Lecturer" />
 
     <!-- Search & Pagination -->
-    <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center md:items-start py-4 gap-4">
-      <div class="flex items-center gap-2 w-full md:w-auto">
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-2 md:gap-4 max-w-6xl mx-auto px-4 py-4">
+      <div class="w-full md:w-auto flex items-center gap-2 mb-2 md:mb-0">
         <label class="font-normal whitespace-nowrap">Search:</label>
         <input
           v-model="searchQuery"
           placeholder="Search lecturer name or course..."
-          class="border border-gray-400 rounded px-3 py-1 w-72 shadow-sm"
+          class="border border-gray-400 rounded px-3 py-1 w-full md:w-72 shadow-sm"
         />
-      </div>
-
-      <div class="flex items-center gap-1 text-sm md:ml-auto">
-        <button @click="gotoPage(1)" :disabled="currentPage === 1" class="px-2 py-1 border rounded">&laquo;</button>
-        <button @click="gotoPage(currentPage - 1)" :disabled="currentPage === 1" class="px-2 py-1 border rounded">&lt;</button>
-        <span>Page</span>
-        <select
-          v-model="currentPage"
-          @change="gotoPage(Number(currentPage))"
-          class="px-2 py-1 border rounded"
-        >
-          <option v-for="page in pageCount" :key="page" :value="page">{{ page }}</option>
-        </select>
-        <span>of {{ pageCount }}</span>
-        <button @click="gotoPage(currentPage + 1)" :disabled="currentPage === pageCount" class="px-2 py-1 border rounded">&gt;</button>
-        <button @click="gotoPage(pageCount)" :disabled="currentPage === pageCount" class="px-2 py-1 border rounded">&raquo;</button>
       </div>
     </div>
 
     <!-- Lecturer Cards -->
-    <div class="grid gap-4 px-4 py-2 max-w-6xl mx-auto grid-cols-1 md:grid-cols-2">
-      <div v-if="loading" class="text-center text-gray-500 italic py-10 col-span-full">
-        Loading lecturers...
-      </div>
-
-      <template v-else>
-        <div
-          v-for="(lecturer, index) in paginatedLecturers"
-          :key="(currentPage - 1) * itemsPerPage + index"
-          class="bg-white border border-gray-200 hover:shadow-md rounded-xl px-4 py-3 flex flex-col justify-between min-h-[140px]"
-        >
-          <!-- Nama dosen dengan emoji 🎓 -->
-          <div
-            @click="openSchedule(lecturer)"
-            class="cursor-pointer text-[#933b3b] font-semibold text-lg hover:underline flex items-center gap-2"
-          >
-            🎓 {{ lecturer.name }}
-          </div>
-
-          <div class="text-sm text-gray-700 mt-1" v-if="lecturer.subjects?.length">
-            <ul class="list-disc pl-5">
-              <li v-for="(subj, i) in lecturer.subjects" :key="i">{{ subj }}</li>
-            </ul>
-          </div>
-
-          <div class="flex flex-wrap gap-2 text-sm mt-2">
-            <span class="flex items-center gap-1 bg-red-50 border border-red-200 px-2 py-1 rounded">
-              📘 Subjects: {{ lecturer.subjectCount }}
-            </span>
-            <span class="flex items-center gap-1 bg-gray-100 border border-gray-300 px-2 py-1 rounded">
-              🧩 Sections: {{ lecturer.sectionCount }}
-            </span>
-            <span class="flex items-center gap-1 bg-blue-50 border border-blue-200 px-2 py-1 rounded">
-              👥 Students: {{ lecturer.studentCount }}
-            </span>
-          </div>
-        </div>
-
-        <div
-          v-if="!paginatedLecturers.length"
-          class="text-center text-gray-400 italic py-10 col-span-full"
-        >
-          No lecturer found
-        </div>
-      </template>
+    <div v-if="loading" class="text-center text-gray-500 py-10">Loading...</div>
+    <div v-else class="grid gap-4 px-4 py-2 max-w-6xl mx-auto grid-cols-1 md:grid-cols-2">
+      <InfoCard
+        v-for="(lecturer, index) in paginatedLecturers"
+        :key="(currentPage - 1) * itemsPerPage + index"
+        :icon="'🎓'"
+        :title="lecturer.name"
+        :details="lecturer.subjects?.length ? lecturer.subjects.map(s => ({ icon: '📚', text: s })) : []"
+        :badges="[
+          { icon: '📖', text: `Subjects: ${lecturer.subjectCount}`, class: 'bg-red-50 border border-red-200' },
+          { icon: '🧩', text: `Sections: ${lecturer.sectionCount}`, class: 'bg-gray-100 border border-gray-300' },
+          { icon: '👥', text: `Students: ${lecturer.studentCount}`, class: 'bg-blue-50 border border-blue-200' }
+        ]"
+        :actions="[{ label: 'View Schedule', onClick: () => openSchedule(lecturer) }]"
+      />
+      <div v-if="!loading && !paginatedLecturers.length" class="text-center text-gray-400 italic py-10 col-span-full">No lecturer found</div>
+    </div>
+    <!-- Pagination (always below, all devices) -->
+    <div class="flex justify-center mt-2 mb-2 w-full gap-1">
+      <button @click="gotoPage(1)" :disabled="currentPage === 1" :class="['px-2 py-1 border rounded font-semibold transition', currentPage === 1 ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-white text-[#e11d48] border-[#e11d48] hover:bg-[#e11d48] hover:text-white']">&laquo;</button>
+      <button @click="gotoPage(currentPage - 1)" :disabled="currentPage === 1" :class="['px-2 py-1 border rounded font-semibold transition', currentPage === 1 ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-white text-[#e11d48] border-[#e11d48] hover:bg-[#e11d48] hover:text-white']">&lt;</button>
+      <span class="mx-2 font-semibold">Page</span>
+      <select
+        v-model="currentPage"
+        @change="gotoPage(Number(currentPage))"
+        class="px-2 py-1 border rounded font-semibold text-[#e11d48] border-[#e11d48] bg-white hover:bg-[#fef2f2] transition"
+        style="min-width: 48px;"
+      >
+        <option v-for="page in pageCount" :key="page" :value="page">{{ page }}</option>
+      </select>
+      <span class="mx-2 font-semibold">of {{ pageCount }}</span>
+      <button @click="gotoPage(currentPage + 1)" :disabled="currentPage === pageCount" :class="['px-2 py-1 border rounded font-semibold transition', currentPage === pageCount ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-white text-[#e11d48] border-[#e11d48] hover:bg-[#e11d48] hover:text-white']">&gt;</button>
+      <button @click="gotoPage(pageCount)" :disabled="currentPage === pageCount" :class="['px-2 py-1 border rounded font-semibold transition', currentPage === pageCount ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-white text-[#e11d48] border-[#e11d48] hover:bg-[#e11d48] hover:text-white']">&raquo;</button>
     </div>
 
     <!-- Modal transparan -->

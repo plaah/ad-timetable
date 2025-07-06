@@ -53,6 +53,18 @@
         </template>
       </div>
 
+      <div class="nav-link" @click="logout">
+        <AppIcon name="logout" />
+        <template v-if="!isCollapsed">
+          <transition name="fade">
+            <span class="link-text">Logout</span>
+          </transition>
+        </template>
+        <template v-else>
+          <span class="tooltip">Logout</span>
+        </template>
+      </div>
+
       <!-- Analysis Dropdown -->
       <div class="nav-link" @click="toggleAnalysisDropdown">
         <AppIcon name="analysis" />
@@ -107,18 +119,6 @@
           </div>
         </div>
       </transition>
-
-      <div class="nav-link" @click="logout">
-        <AppIcon name="logout" />
-        <template v-if="!isCollapsed">
-          <transition name="fade">
-            <span class="link-text">Logout</span>
-          </transition>
-        </template>
-        <template v-else>
-          <span class="tooltip">Logout</span>
-        </template>
-      </div>
     </nav>
   </div>
 
@@ -144,7 +144,6 @@ const error = ref(null);
 const sidebarVisible = ref(false);
 const isCollapsed = ref(true);
 const sidebarRef = ref(null);
-const isAnalysisDropdownOpen = ref(false);
 
 const props = defineProps({
   titleBanner: {
@@ -188,39 +187,6 @@ const navItems = [
   { path: "/Student", icon: "student", label: "Student" },
   { path: "/Curriculum", icon: "curriculum", label: "Curriculum" },
 ];
-
-const toggleAnalysisDropdown = () => {
-  isAnalysisDropdownOpen.value = !isAnalysisDropdownOpen.value;
-};
-
-const loadMasaruang = () => {
-  toggleSidebar();
-  window.location.href = "/TimeVenue";
-};
-const loadAnalysisSubjek = () => {
-  toggleSidebar();
-  window.location.href = "/AnalysisSubject";
-};
-const loadAnalysisPelajar = () => {
-  toggleSidebar();
-  window.location.href = "/AnalysisStudent";
-};
-const loadClashRuang = () => {
-  toggleSidebar();
-  window.location.href = "/ClashVenue";
-};
-const loadClashPensyarah = () => {
-  toggleSidebar();
-  window.location.href = "/ClashLecture";
-};
-const loadClashPelajar = () => {
-  toggleSidebar();
-  window.location.href = "/ClashStudent";
-};
-
-const toggleSidebar = () => {
-  sidebarVisible.value = !sidebarVisible.value;
-};
 
 const handleKeydown = (e) => {
   if (e.key === "Escape") closeSidebar();

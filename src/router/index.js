@@ -7,8 +7,6 @@ import Subject from "@/views/Subject.vue";
 import Lecturer from "@/views/Lecturer.vue";
 import Student from "@/views/Student.vue";
 import Curriculum from "@/views/Curriculum.vue";
-import AnalysisSubject from "@/views/AnalysisSubject.vue";
-import AnalysisStudent from "@/views/AnalysisStudent.vue";
 import ClashLecture from "@/views/ClashLecture.vue";
 import ClashStudent from "@/views/ClashStudent.vue";
 import ClashVenue from "@/views/ClashVenue.vue";
@@ -67,18 +65,6 @@ const routes = [
     path: "/curriculum",
     name: "Curriculum",
     component: Curriculum,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: "/analysissubject",
-    name: "AnalysisSubject",
-    component: AnalysisSubject,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: "/analysisstudent",
-    name: "AnalysisStudent",
-    component: AnalysisStudent,
     meta: { requiresAuth: true },
   },
   {
