@@ -64,61 +64,6 @@
           <span class="tooltip">Logout</span>
         </template>
       </div>
-
-      <!-- Analysis Dropdown -->
-      <div class="nav-link" @click="toggleAnalysisDropdown">
-        <AppIcon name="analysis" />
-        <template v-if="!isCollapsed">
-          <transition name="fade">
-            <span class="link-text">Analysis</span>
-          </transition>
-        </template>
-        <template v-else>
-          <span class="tooltip">Analysis</span>
-        </template>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-4 w-4 ml-2"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
-      </div>
-      <transition name="fade">
-        <div v-if="isAnalysisDropdownOpen && !isCollapsed" class="analysis-dropdown">
-          <div class="dropdown-item" @click="loadMasaruang">
-            <AppIcon name="masaruang" />
-            <span class="link-text">Time Venue</span>
-          </div>
-          <div class="dropdown-item" @click="loadAnalysisSubjek">
-            <AppIcon name="analysissubjek" />
-            <span class="link-text">Analysis Subject</span>
-          </div>
-          <div class="dropdown-item" @click="loadAnalysisPelajar">
-            <AppIcon name="analysisstudent" />
-            <span class="link-text">Analysis Student</span>
-          </div>
-          <div class="dropdown-item" @click="loadClashRuang">
-            <AppIcon name="clashvenue" />
-            <span class="link-text">Clash Venue</span>
-          </div>
-          <div class="dropdown-item" @click="loadClashPensyarah">
-            <AppIcon name="clashlecture" />
-            <span class="link-text">Clash Lecture</span>
-          </div>
-          <div class="dropdown-item" @click="loadClashPelajar">
-            <AppIcon name="clashstudent" />
-            <span class="link-text">Clash Student</span>
-          </div>
-        </div>
-      </transition>
     </nav>
   </div>
 
@@ -325,28 +270,6 @@ onBeforeUnmount(() => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-}
-
-.analysis-dropdown {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  margin-top: 10px;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.dropdown-item {
-  color: white;
-  padding: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  transition: background-color 0.2s ease;
-}
-.dropdown-item:hover {
-  background-color: rgba(255, 255, 255, 0.15);
 }
 
 .error-message {

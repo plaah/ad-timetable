@@ -50,7 +50,7 @@
 
         <!-- Day Tabs -->
         <div class="mt-6 text-sm font-medium relative overflow-x-auto px-2 sm:px-0 scrollbar-hide tab-wrapper">
-          <div class="flex sm:grid sm:grid-cols-7 gap-2 min-w-max sm:min-w-0">
+          <div class="flex justify-between gap-1 w-full max-w-sm mx-auto sm:max-w-full sm:grid sm:grid-cols-7">
             <div
               v-for="(day, i) in days"
               :key="i"
@@ -59,12 +59,18 @@
             >
               <div
                 @click="showPopupBelow(i)"
-                :class="selectedDay === i
-                  ? 'bg-[#933b3b] text-white shadow-md'
-                  : 'hover:bg-gray-100 text-gray-700'"
-                class="px-3 py-2 rounded-lg cursor-pointer transition-all w-full whitespace-nowrap"
+                :class="[
+                  'inline-flex flex-col items-center justify-center cursor-pointer select-none',
+                  'transition-all duration-200',
+                  'border-2',
+                  'rounded-[2rem]',
+                  'w-12 h-16',
+                  selectedDay === i ? 'bg-[#933b3b] border-[#933b3b] text-white shadow-lg scale-105' : 'bg-white border-[#933b3b] text-[#933b3b] hover:bg-[#f8eaea]'
+                ]"
+                style="font-size: 12px; padding: 0.25rem 0.5rem;"
               >
-                {{ day }}
+                <span class="font-bold">{{ day.slice(0,3) }}</span>
+                <span class="text-xs mt-1">{{ getDateForDay(i) }}</span>
               </div>
             </div>
           </div>
@@ -80,12 +86,12 @@
             ? { top: popupTop + 'px', left: '50%', transform: 'translateX(-50%)' }
             : { top: popupTop + 'px', left: popupLeft + 'px', transform: 'translateX(-50%)' }"
         >
-          <div v-if="daySchedule.length === 0" class="text-center text-gray-400 text-sm italic">
+          <div v-if="mergedDaySchedule.length === 0" class="text-center text-gray-400 text-sm italic">
             No classes scheduled on {{ days[selectedDay] }}.
           </div>
           <div v-else class="space-y-3">
             <InfoCard
-              v-for="(item, index) in daySchedule"
+              v-for="(item, index) in mergedDaySchedule"
               :key="index"
               :icon="'⏰'"
               :title="item.subjectName"
@@ -242,6 +248,41 @@ const daySchedule = computed(() => {
   return schedule;
 });
 
+const mergedDaySchedule = computed(() => {
+  const waktuToMasa = {};
+  timetableData.value.forEach(row => {
+    waktuToMasa[row.waktu] = row.masa;
+  });
+  const schedule = [...daySchedule.value];
+  schedule.sort((a, b) => (waktuToMasa[a.time] || 0) - (waktuToMasa[b.time] || 0));
+  const merged = [];
+  let current = null;
+  for (let item of schedule) {
+    const masa = waktuToMasa[item.time] || 0;
+    if (!current) {
+      current = { ...item, masaStart: masa, masaEnd: masa };
+    } else if (
+      item.subject === current.subject &&
+      item.section === current.section &&
+      item.room === current.room &&
+      masa === current.masaEnd + 1
+    ) {
+      current.masaEnd = masa;
+    } else {
+      const waktuStart = Object.keys(waktuToMasa).find(w => waktuToMasa[w] === current.masaStart) || current.time;
+      const waktuEnd = Object.keys(waktuToMasa).find(w => waktuToMasa[w] === current.masaEnd) || current.time;
+      merged.push({ ...current, time: `${waktuStart.split('-')[0].trim()} - ${waktuEnd.split('-')[1].trim()}` });
+      current = { ...item, masaStart: masa, masaEnd: masa };
+    }
+  }
+  if (current) {
+    const waktuStart = Object.keys(waktuToMasa).find(w => waktuToMasa[w] === current.masaStart) || current.time;
+    const waktuEnd = Object.keys(waktuToMasa).find(w => waktuToMasa[w] === current.masaEnd) || current.time;
+    merged.push({ ...current, time: `${waktuStart.split('-')[0].trim()} - ${waktuEnd.split('-')[1].trim()}` });
+  }
+  return merged;
+});
+
 watch(filteredSubjects, async (newSubs) => {
   isLoading.value = true;
   timetableData.value = JSON.parse(JSON.stringify(timetable));
@@ -298,6 +339,15 @@ function showPopupBelow(index) {
     }
   }
 }
+
+const getDateForDay = (dayIndex) => {
+  const today = new Date();
+  const currentDay = today.getDay();
+  const diff = dayIndex - currentDay;
+  const targetDate = new Date(today);
+  targetDate.setDate(today.getDate() + diff);
+  return targetDate.getDate();
+};
 </script>
 
 <style scoped>
