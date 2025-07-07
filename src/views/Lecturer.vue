@@ -10,6 +10,7 @@ import {
   fetchLecturers,
   fetchLecturerSections
 } from "@/api/LecturerApi.js";
+import RedPagination from '@/components/RedPagination.vue';
 
 // Auth dari localStorage
 const lsData = JSON.parse(localStorage.getItem("web.fc.utm.my_usersession"));
@@ -114,6 +115,12 @@ function gotoPage(page) {
 watch(searchQuery, () => {
   currentPage.value = 1;
 });
+
+const pageSizeOptions = [10, 20, 50, 100];
+const pageSize = ref(itemsPerPage);
+watch(pageSize, (val) => { itemsPerPage = val; currentPage.value = 1; });
+function handlePageChange(page) { gotoPage(page); }
+function handlePageSizeChange(size) { itemsPerPage = size; currentPage.value = 1; }
 </script>
 
 <template>
@@ -151,22 +158,14 @@ watch(searchQuery, () => {
       <div v-if="!loading && !paginatedLecturers.length" class="text-center text-gray-400 italic py-10 col-span-full">No lecturer found</div>
     </div>
     <!-- Pagination (always below, all devices) -->
-    <div class="flex justify-center mt-2 mb-2 w-full gap-1">
-      <button @click="gotoPage(1)" :disabled="currentPage === 1" :class="['px-2 py-1 border rounded font-semibold transition', currentPage === 1 ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-white text-[#e11d48] border-[#e11d48] hover:bg-[#e11d48] hover:text-white']">&laquo;</button>
-      <button @click="gotoPage(currentPage - 1)" :disabled="currentPage === 1" :class="['px-2 py-1 border rounded font-semibold transition', currentPage === 1 ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-white text-[#e11d48] border-[#e11d48] hover:bg-[#e11d48] hover:text-white']">&lt;</button>
-      <span class="mx-2 font-semibold">Page</span>
-      <select
-        v-model="currentPage"
-        @change="gotoPage(Number(currentPage))"
-        class="px-2 py-1 border rounded font-semibold text-[#e11d48] border-[#e11d48] bg-white hover:bg-[#fef2f2] transition"
-        style="min-width: 48px;"
-      >
-        <option v-for="page in pageCount" :key="page" :value="page">{{ page }}</option>
-      </select>
-      <span class="mx-2 font-semibold">of {{ pageCount }}</span>
-      <button @click="gotoPage(currentPage + 1)" :disabled="currentPage === pageCount" :class="['px-2 py-1 border rounded font-semibold transition', currentPage === pageCount ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-white text-[#e11d48] border-[#e11d48] hover:bg-[#e11d48] hover:text-white']">&gt;</button>
-      <button @click="gotoPage(pageCount)" :disabled="currentPage === pageCount" :class="['px-2 py-1 border rounded font-semibold transition', currentPage === pageCount ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-white text-[#e11d48] border-[#e11d48] hover:bg-[#e11d48] hover:text-white']">&raquo;</button>
-    </div>
+    <RedPagination
+      :currentPage="currentPage"
+      :pageCount="pageCount"
+      :onPageChange="handlePageChange"
+      :pageSize="pageSize"
+      :onPageSizeChange="handlePageSizeChange"
+      :pageSizeOptions="pageSizeOptions"
+    />
 
     <!-- Modal transparan -->
     <Teleport to="body">

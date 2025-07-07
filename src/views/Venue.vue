@@ -5,6 +5,7 @@ import VenueApi from "@/api/VenueApi";
 import VenueScheduleModal from "@/components/VenueScheduleModal.vue";
 import InfoCard from "@/components/InfoCard.vue";
 import { userName, userMatric } from "@/constants/ApiConstants.js";
+import RedPagination from '@/components/RedPagination.vue';
 
 // Load user session if available
 const lsData = JSON.parse(localStorage.getItem("web.fc.utm.my_usersession"));
@@ -24,6 +25,12 @@ const searchQuery = ref("");
 // Modal state
 const showModal = ref(false);
 const selectedRoom = ref(null);
+
+const pageSizeOptions = [10, 20, 50, 100];
+const pageSize = ref(itemsPerPage);
+watch(pageSize, (val) => { itemsPerPage = val; currentPage.value = 1; });
+function handlePageChange(page) { setPage(page); }
+function handlePageSizeChange(size) { itemsPerPage = size; currentPage.value = 1; }
 
 // Normalize room object
 const formatRoomData = (room) => ({
@@ -124,22 +131,14 @@ function openModal(room) {
       <div v-if="!loading && !paginatedRooms.length" class="text-center text-gray-400 italic py-10 col-span-full">No venue found</div>
     </div>
     <!-- Pagination (always below, all devices) -->
-    <div class="flex justify-center mt-2 mb-2 w-full gap-1">
-      <button @click="setPage(1)" :disabled="currentPage === 1" :class="['px-2 py-1 border rounded font-semibold transition', currentPage === 1 ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-white text-[#e11d48] border-[#e11d48] hover:bg-[#e11d48] hover:text-white']">&laquo;</button>
-      <button @click="setPage(currentPage - 1)" :disabled="currentPage === 1" :class="['px-2 py-1 border rounded font-semibold transition', currentPage === 1 ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-white text-[#e11d48] border-[#e11d48] hover:bg-[#e11d48] hover:text-white']">&lt;</button>
-      <span class="mx-2 font-semibold">Page</span>
-      <select
-        v-model="currentPage"
-        @change="setPage(Number(currentPage))"
-        class="px-2 py-1 border rounded font-semibold text-[#e11d48] border-[#e11d48] bg-white hover:bg-[#fef2f2] transition"
-        style="min-width: 48px;"
-      >
-        <option v-for="page in totalPages" :key="page" :value="page">{{ page }}</option>
-      </select>
-      <span class="mx-2 font-semibold">of {{ totalPages }}</span>
-      <button @click="setPage(currentPage + 1)" :disabled="currentPage === totalPages" :class="['px-2 py-1 border rounded font-semibold transition', currentPage === totalPages ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-white text-[#e11d48] border-[#e11d48] hover:bg-[#e11d48] hover:text-white']">&gt;</button>
-      <button @click="setPage(totalPages)" :disabled="currentPage === totalPages" :class="['px-2 py-1 border rounded font-semibold transition', currentPage === totalPages ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 'bg-white text-[#e11d48] border-[#e11d48] hover:bg-[#e11d48] hover:text-white']">&raquo;</button>
-    </div>
+    <RedPagination
+      :currentPage="currentPage"
+      :pageCount="totalPages"
+      :onPageChange="handlePageChange"
+      :pageSize="pageSize"
+      :onPageSizeChange="handlePageSizeChange"
+      :pageSizeOptions="pageSizeOptions"
+    />
 
     <!-- Modal -->
     <VenueScheduleModal
