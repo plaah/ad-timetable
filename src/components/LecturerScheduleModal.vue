@@ -22,51 +22,63 @@
         Loading timetable...
       </div>
 
-      <!-- Empty -->
-      <div v-else-if="slots.length === 0" class="text-center text-gray-400 py-6 italic">
-        No timetable data available.
-      </div>
-<!-- Table View -->
-<div v-else>
-  <table class="w-full table-fixed border text-sm border-collapse">
-    <thead>
-      <tr class="bg-[#933b3b] text-white text-center">
-        <th class="w-[90px] py-2 border">Time</th>
-        <th v-for="day in days" :key="day" class="py-2 border">{{ day }}</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr v-for="time in timeSlots" :key="time">
-        <td class="text-center border px-2 py-2 font-medium">{{ time }}</td>
-        <td
-          v-for="day in days"
-          :key="day + time"
-          class="border px-2 py-1 align-top min-h-[80px]"
-        >
+      <!-- Daily Card View -->
+      <div v-else>
+        <!-- Tab Hari -->
+        <div class="flex justify-between gap-1 w-full max-w-sm mx-auto mb-4">
           <div
-            v-for="slot in scheduleMap[day]?.[time] || []"
-            :key="slot.id_jws"
-            class="bg-gray-100 border border-gray-300 rounded mb-1 p-1 text-xs leading-tight"
+            v-for="(day, i) in days"
+            :key="i"
+            class="relative text-center"
           >
-            <div class="font-semibold text-[#933b3b]">{{ slot.kod_subjek }}</div>
-            <div>Section: {{ slot.seksyen }}</div>
-            <div>Room: {{ slot.ruang?.kod || 'N/A' }}</div>
+            <div
+              @click="selectedDay = i"
+              :class="[
+                'inline-flex flex-col items-center justify-center cursor-pointer select-none',
+                'transition-all duration-200',
+                'border-2',
+                'rounded-[2rem]',
+                'w-12 h-16',
+                selectedDay === i ? 'bg-[#933b3b] border-[#933b3b] text-white shadow-lg scale-105' : 'bg-white border-[#933b3b] text-[#933b3b] hover:bg-[#f8eaea]'
+              ]"
+              style="font-size: 12px; padding: 0.25rem 0.5rem;"
+            >
+              <span class="font-bold">{{ day.slice(0,3) }}</span>
+              <span class="text-xs mt-1">{{ getDateForDay(i) }}</span>
+            </div>
           </div>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
+        </div>
+        <!-- Card Jadwal Harian -->
+        <div v-if="mergedDaySchedule.length === 0" class="text-center text-gray-400 text-sm italic">
+          No classes scheduled on {{ days[selectedDay] }}.
+        </div>
+        <div v-else class="space-y-3">
+          <InfoCard
+            v-for="(item, index) in mergedDaySchedule"
+            :key="index"
+            :icon="'⏰'"
+            :title="item.nama_subjek || item.kod_subjek"
+            :subtitle="item.time"
+            :details="[
+              { icon: '📘', text: item.kod_subjek },
+              { icon: '🔢', text: `Section: ${item.seksyen}` },
+              ...(item.ruang?.kod ? [{ icon: '📍', text: item.ruang.kod }] : [])
+            ]"
+            :badges="[]"
+            :onCardClick="null"
+          />
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import timetableApi from "@/api/TimetableApi";
 import LecturerSubjectApi from "@/api/LecturerSubjectApi";
 import { fetchCurrentSession } from "@/api/LecturerApi";
+import InfoCard from './InfoCard.vue';
 
 const props = defineProps({
   visible: Boolean,
@@ -85,6 +97,7 @@ const timeSlots = [
 const slots = ref([]);
 const scheduleMap = ref({});
 const isLoading = ref(false);
+const selectedDay = ref(new Date().getDay());
 
 onMounted(async () => {
   isLoading.value = true;
@@ -140,5 +153,62 @@ onMounted(async () => {
   } finally {
     isLoading.value = false;
   }
+});
+
+const getDateForDay = (dayIndex) => {
+  const today = new Date();
+  const currentDay = today.getDay();
+  const diff = dayIndex - currentDay;
+  const targetDate = new Date(today);
+  targetDate.setDate(today.getDate() + diff);
+  return targetDate.getDate();
+};
+
+const dailySchedule = computed(() => {
+  // Ambil slot untuk hari yang dipilih
+  const dayName = days[selectedDay.value];
+  const slots = [];
+  if (scheduleMap.value && scheduleMap.value[dayName]) {
+    for (const time of timeSlots) {
+      for (const item of scheduleMap.value[dayName][time]) {
+        slots.push({ ...item, time });
+      }
+    }
+  }
+  // Urutkan berdasarkan masa
+  slots.sort((a, b) => (parseInt(a.masa) || 0) - (parseInt(b.masa) || 0));
+  return slots;
+});
+
+const mergedDaySchedule = computed(() => {
+  // Merge slot subject, section, room, dan jam berurutan
+  const schedule = [...dailySchedule.value];
+  const merged = [];
+  let current = null;
+  for (let item of schedule) {
+    const masa = parseInt(item.masa) || 0;
+    if (!current) {
+      current = { ...item, masaStart: masa, masaEnd: masa };
+    } else if (
+      item.kod_subjek === current.kod_subjek &&
+      item.seksyen === current.seksyen &&
+      (item.ruang?.kod || '') === (current.ruang?.kod || '') &&
+      masa === current.masaEnd + 1
+    ) {
+      current.masaEnd = masa;
+    } else {
+      // Format waktu gabungan
+      const waktuStart = timeSlots[(current.masaStart || 1) - 1] || current.time;
+      const waktuEnd = timeSlots[(current.masaEnd || 1) - 1] || current.time;
+      merged.push({ ...current, time: `${waktuStart.split('-')[0].trim()} - ${waktuEnd.split('-')[1].trim()}` });
+      current = { ...item, masaStart: masa, masaEnd: masa };
+    }
+  }
+  if (current) {
+    const waktuStart = timeSlots[(current.masaStart || 1) - 1] || current.time;
+    const waktuEnd = timeSlots[(current.masaEnd || 1) - 1] || current.time;
+    merged.push({ ...current, time: `${waktuStart.split('-')[0].trim()} - ${waktuEnd.split('-')[1].trim()}` });
+  }
+  return merged;
 });
 </script>

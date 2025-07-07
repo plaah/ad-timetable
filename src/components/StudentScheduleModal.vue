@@ -24,56 +24,52 @@
         Loading timetable...
       </div>
 
-      <!-- Table: Schedule -->
-      <div v-else-if="groupedSlots">
-        <div class="overflow-x-auto">
-          <table class="w-full min-w-[700px] border text-xs sm:text-sm table-fixed">
-            <thead>
-              <tr class="bg-[#933b3b] text-white text-center">
-                <th class="w-[90px] py-2">Time</th>
-                <th
-                  v-for="day in days"
-                  :key="day"
-                  class="py-2 px-1 sm:px-2"
-                >
-                  {{ day }}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="slot in timeSlots" :key="slot">
-                <td class="text-center border px-1 sm:px-2 py-1 font-semibold">
-                  {{ slot }}
-                </td>
-                <td
-                  v-for="day in days"
-                  :key="day + slot"
-                  class="border px-1 sm:px-2 py-1 align-top"
-                >
-                  <div
-                    v-for="item in groupedSlots[day][slot]"
-                    :key="item.kod_subjek + item.masa + item.hari"
-                    class="bg-gray-100 border border-gray-300 rounded mb-1 p-1 text-[10px] sm:text-xs leading-tight"
-                  >
-                    <strong>{{ item.kod_subjek }}</strong><br />
-                    Section: {{ item.seksyen }}<br />
-                    {{ item.nama_bilik || 'Room: N/A' }}
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      <!-- Daily Card View -->
+      <div v-else>
+        <!-- Tab Hari -->
+        <div class="flex justify-between gap-1 w-full max-w-sm mx-auto mb-4">
+          <div
+            v-for="(day, i) in days"
+            :key="i"
+            class="relative text-center"
+          >
+            <div
+              @click="selectedDay = i"
+              :class="[
+                'inline-flex flex-col items-center justify-center cursor-pointer select-none',
+                'transition-all duration-200',
+                'border-2',
+                'rounded-[2rem]',
+                'w-12 h-16',
+                selectedDay === i ? 'bg-[#933b3b] border-[#933b3b] text-white shadow-lg scale-105' : 'bg-white border-[#933b3b] text-[#933b3b] hover:bg-[#f8eaea]'
+              ]"
+              style="font-size: 12px; padding: 0.25rem 0.5rem;"
+            >
+              <span class="font-bold">{{ day.slice(0,3) }}</span>
+              <span class="text-xs mt-1">{{ getDateForDay(i) }}</span>
+            </div>
+          </div>
         </div>
-
-        <!-- Optional: scroll hint -->
-        <p class="text-gray-400 text-[10px] mt-2 sm:hidden text-center italic">
-          Scroll sideways to view more →
-        </p>
-      </div>
-
-      <!-- No Data -->
-      <div v-else class="text-center text-gray-400 py-6 italic">
-        No timetable data available.
+        <!-- Card Jadwal Harian -->
+        <div v-if="mergedDaySchedule.length === 0" class="text-center text-gray-400 text-sm italic">
+          No classes scheduled on {{ days[selectedDay] }}.
+        </div>
+        <div v-else class="space-y-3">
+          <InfoCard
+            v-for="(item, index) in mergedDaySchedule"
+            :key="index"
+            :icon="'⏰'"
+            :title="item.subjectName || item.kod_subjek"
+            :subtitle="item.time"
+            :details="[
+              { icon: '📘', text: item.kod_subjek },
+              { icon: '🔢', text: `Section: ${item.seksyen}` },
+              ...(item.nama_bilik ? [{ icon: '📍', text: item.nama_bilik }] : [])
+            ]"
+            :badges="[]"
+            :onCardClick="null"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -81,9 +77,10 @@
 
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { fetchStudentSubjects, fetchCurrentSession } from '@/api/StudentApi.js'
 import timetableApi from '@/api/TimetableApi.js'
+import InfoCard from './InfoCard.vue'
 
 const props = defineProps({
   matric: String,
@@ -122,6 +119,64 @@ const periodMap = {
 }
 
 const api = new timetableApi()
+
+const selectedDay = ref(new Date().getDay());
+const getDateForDay = (dayIndex) => {
+  const today = new Date();
+  const currentDay = today.getDay();
+  const diff = dayIndex - currentDay;
+  const targetDate = new Date(today);
+  targetDate.setDate(today.getDate() + diff);
+  return targetDate.getDate();
+};
+
+const dailySchedule = computed(() => {
+  // Ambil slot untuk hari yang dipilih
+  const dayName = days[selectedDay.value];
+  const slots = [];
+  if (groupedSlots.value && groupedSlots.value[dayName]) {
+    for (const time of timeSlots) {
+      for (const item of groupedSlots.value[dayName][time]) {
+        slots.push({ ...item, time });
+      }
+    }
+  }
+  // Urutkan berdasarkan masa
+  slots.sort((a, b) => (parseInt(a.masa) || 0) - (parseInt(b.masa) || 0));
+  return slots;
+});
+
+const mergedDaySchedule = computed(() => {
+  // Merge slot subject, section, room, dan jam berurutan
+  const schedule = [...dailySchedule.value];
+  const merged = [];
+  let current = null;
+  for (let item of schedule) {
+    const masa = parseInt(item.masa) || 0;
+    if (!current) {
+      current = { ...item, masaStart: masa, masaEnd: masa };
+    } else if (
+      item.kod_subjek === current.kod_subjek &&
+      item.seksyen === current.seksyen &&
+      item.nama_bilik === current.nama_bilik &&
+      masa === current.masaEnd + 1
+    ) {
+      current.masaEnd = masa;
+    } else {
+      // Format waktu gabungan
+      const waktuStart = timeSlots[(current.masaStart || 1) - 1] || current.time;
+      const waktuEnd = timeSlots[(current.masaEnd || 1) - 1] || current.time;
+      merged.push({ ...current, time: `${waktuStart.split('-')[0].trim()} - ${waktuEnd.split('-')[1].trim()}` });
+      current = { ...item, masaStart: masa, masaEnd: masa };
+    }
+  }
+  if (current) {
+    const waktuStart = timeSlots[(current.masaStart || 1) - 1] || current.time;
+    const waktuEnd = timeSlots[(current.masaEnd || 1) - 1] || current.time;
+    merged.push({ ...current, time: `${waktuStart.split('-')[0].trim()} - ${waktuEnd.split('-')[1].trim()}` });
+  }
+  return merged;
+});
 
 function normalizeTime(t) {
   if (typeof t === 'string') {
