@@ -103,6 +103,7 @@
               ]"
               :badges="[]"
               :onCardClick="null"
+              class="responsive-info-card"
             />
           </div>
         </div>
@@ -111,35 +112,59 @@
 
     <!-- WEEKLY VIEW -->
     <div v-show="viewMode === 'weekly'">
-      <div class="overflow-x-auto mt-4 px-4 relative">
-        <div class="sm:hidden absolute -top-6 left-4 text-xs text-gray-400">
-          👈 Swipe to view full timetable
+      <div class="mt-4 px-2 sm:px-4">
+        <!-- Tab Hari Minggu Ini -->
+        <div class="flex justify-between gap-1 w-full max-w-sm mx-auto mb-4">
+          <div
+            v-for="(day, i) in days"
+            :key="i"
+            class="relative text-center"
+          >
+            <div
+              :class="[
+                'inline-flex flex-col items-center justify-center select-none',
+                'transition-all duration-200',
+                'border-2',
+                'rounded-[2rem]',
+                'w-12 h-16',
+                'bg-[#933b3b] border-[#933b3b] text-white shadow-lg scale-105'
+              ]"
+              style="font-size: 12px; padding: 0.25rem 0.5rem;"
+            >
+              <span class="font-bold">{{ day.slice(0,3) }}</span>
+              <span class="text-xs mt-1">{{ getDateForDayOfWeek(i) }}</span>
+            </div>
+          </div>
         </div>
-        <div id="week-pdf" class="bg-white p-4 rounded-xl shadow min-w-[700px] sm:min-w-full overflow-auto sm:overflow-visible">
-          <table class="w-full table-fixed border border-gray-300 rounded-xl text-sm text-left bg-white shadow">
-            <thead class="bg-[#933b3b] text-white">
-              <tr>
-                <th class="p-3 border-r border-white">Time</th>
-                <th v-for="day in days" :key="day" class="p-3 border-r border-white">{{ day }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="(row, timeIdx) in timetableData.filter(r => parseInt(r.waktu.split('-')[0]) < 17)"
-                :key="row.waktu"
-                class="border-t border-gray-300"
-              >
-                <td class="p-3 font-semibold text-gray-700">{{ row.waktu }}</td>
-                <td v-for="(slot, i) in row.slots" :key="i" class="p-3 align-top">
-                  <div v-if="slot">
-                    <div class="font-bold">{{ slot.split('\n')[0] }}</div>
-                    <div class="text-xs text-gray-600">{{ slot.split('\n')[1] }}</div>
-                    <div class="text-xs text-gray-500">{{ slot.split('\n')[2] }}</div>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- Agenda Mingguan: List semua hari minggu ini -->
+        <div v-if="weeklyAgendaAll.length === 0" class="text-center text-gray-400 text-sm italic">
+          No agenda for this week.
+        </div>
+        <div v-else>
+          <div v-for="(agenda, i) in weeklyAgendaAll" :key="i" class="mb-6">
+            <div class="font-semibold text-[#933b3b] mb-2 text-base flex items-center gap-2">
+              <span>{{ days[i] }}</span>
+              <span class="text-xs text-gray-400">{{ getDateForDayOfWeek(i) }}</span>
+            </div>
+            <div v-if="agenda.length === 0" class="text-gray-400 text-sm italic mb-2">No agenda.</div>
+            <div v-else class="space-y-3">
+              <InfoCard
+                v-for="(item, idx) in agenda"
+                :key="idx"
+                :icon="'⏰'"
+                :title="item.subjectName"
+                :subtitle="item.time"
+                :details="[
+                  { icon: '📘', text: item.subject },
+                  { icon: '🔢', text: `Section: ${item.section}` },
+                  ...(item.room ? [{ icon: '📍', text: item.room }] : [])
+                ]"
+                :badges="[]"
+                :onCardClick="null"
+                class="responsive-info-card"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -157,6 +182,7 @@ import TimetableApi from '@/api/TimetableApi';
 import InfoCard from '@/components/InfoCard.vue';
 import { userMatric, userName } from '@/constants/ApiConstants';
 import { timetable, days } from '@/constants/TimeTableConstants';
+import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameDay, addDays } from 'date-fns';
 
 const isSidebarOpen = inject('isSidebarOpen', false);
 
@@ -348,6 +374,195 @@ const getDateForDay = (dayIndex) => {
   targetDate.setDate(today.getDate() + diff);
   return targetDate.getDate();
 };
+
+const today = new Date();
+const calendarDates = computed(() => {
+  const start = startOfMonth(today);
+  const end = endOfMonth(today);
+  const dates = [];
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    dates.push(new Date(d));
+  }
+  return dates;
+});
+
+const activeWeekStart = ref(startOfWeek(today, { weekStartsOn: 0 }));
+const activeWeekEnd = ref(endOfWeek(today, { weekStartsOn: 0 }));
+
+function isToday(date) {
+  return isSameDay(date, today);
+}
+function isDateInActiveWeek(date) {
+  return date >= activeWeekStart.value && date <= activeWeekEnd.value;
+}
+function selectWeekByDate(date) {
+  activeWeekStart.value = startOfWeek(date, { weekStartsOn: 0 });
+  activeWeekEnd.value = endOfWeek(date, { weekStartsOn: 0 });
+}
+
+const weeklyAgenda = computed(() => {
+  // Kumpulkan semua jadwal di minggu aktif
+  const agenda = [];
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(activeWeekStart.value, i);
+    const dayIdx = d.getDay();
+    // Ambil jadwal harian (pakai logic merge agar tidak duplikat)
+    const waktuToMasa = {};
+    timetableData.value.forEach(row => {
+      waktuToMasa[row.waktu] = row.masa;
+    });
+    const schedule = [];
+    const colorMap = new Map();
+    let colorIndex = 0;
+    const colors = [
+      "bg-[#f9dcdc] border-[#933b3b]",
+      "bg-[#f0e0e0] border-[#933b3b]",
+      "bg-[#f7eaea] border-[#933b3b]",
+      "bg-[#fae3e3] border-[#933b3b]",
+      "bg-[#ffecec] border-[#933b3b]",
+      "bg-[#ffe2e2] border-[#933b3b]",
+    ];
+    timetableData.value.forEach((row) => {
+      const slot = row.slots[dayIdx];
+      if (slot && slot.trim()) {
+        const [code, secRaw, room] = slot.split("\n");
+        const section = secRaw?.replace("section :", "").trim();
+        const info = filteredSubjects.value.find(s => s.kod_subjek === code.trim());
+        if (!colorMap.has(code)) {
+          colorMap.set(code, colors[colorIndex % colors.length]);
+          colorIndex++;
+        }
+        schedule.push({
+          time: row.waktu,
+          subject: code.trim(),
+          subjectName: info?.nama_subjek || "",
+          section,
+          room: room?.trim(),
+          color: colorMap.get(code),
+        });
+      }
+    });
+    // Merge jadwal harian
+    schedule.sort((a, b) => (waktuToMasa[a.time] || 0) - (waktuToMasa[b.time] || 0));
+    let current = null;
+    for (let item of schedule) {
+      const masa = waktuToMasa[item.time] || 0;
+      if (!current) {
+        current = { ...item, masaStart: masa, masaEnd: masa };
+      } else if (
+        item.subject === current.subject &&
+        item.section === current.section &&
+        item.room === current.room &&
+        masa === current.masaEnd + 1
+      ) {
+        current.masaEnd = masa;
+      } else {
+        const waktuStart = Object.keys(waktuToMasa).find(w => waktuToMasa[w] === current.masaStart) || current.time;
+        const waktuEnd = Object.keys(waktuToMasa).find(w => waktuToMasa[w] === current.masaEnd) || current.time;
+        agenda.push({ ...current, time: `${waktuStart.split('-')[0].trim()} - ${waktuEnd.split('-')[1].trim()}` });
+        current = { ...item, masaStart: masa, masaEnd: masa };
+      }
+    }
+    if (current) {
+      const waktuStart = Object.keys(waktuToMasa).find(w => waktuToMasa[w] === current.masaStart) || current.time;
+      const waktuEnd = Object.keys(waktuToMasa).find(w => waktuToMasa[w] === current.masaEnd) || current.time;
+      agenda.push({ ...current, time: `${waktuStart.split('-')[0].trim()} - ${waktuEnd.split('-')[1].trim()}` });
+    }
+  }
+  // Urutkan agenda by hari & jam
+  agenda.sort((a, b) => {
+    if (a.section !== b.section) return a.section.localeCompare(b.section);
+    if (a.subject !== b.subject) return a.subject.localeCompare(b.subject);
+    return (a.masaStart || 0) - (b.masaStart || 0);
+  });
+  return agenda;
+});
+
+// Helper: tanggal untuk hari ke-i di minggu aktif
+function getDateForDayOfWeek(dayIdx) {
+  const today = new Date();
+  const start = startOfWeek(today, { weekStartsOn: 0 });
+  const d = new Date(start);
+  d.setDate(start.getDate() + dayIdx);
+  return d.getDate();
+}
+
+const weeklyAgendaAll = computed(() => {
+  // List agenda per hari minggu berjalan
+  const agendaPerDay = [];
+  const today = new Date();
+  const start = startOfWeek(today, { weekStartsOn: 0 });
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const dayIdx = d.getDay();
+    // Ambil jadwal harian (pakai logic merge agar tidak duplikat)
+    const waktuToMasa = {};
+    timetableData.value.forEach(row => {
+      waktuToMasa[row.waktu] = row.masa;
+    });
+    const schedule = [];
+    const colorMap = new Map();
+    let colorIndex = 0;
+    const colors = [
+      "bg-[#f9dcdc] border-[#933b3b]",
+      "bg-[#f0e0e0] border-[#933b3b]",
+      "bg-[#f7eaea] border-[#933b3b]",
+      "bg-[#fae3e3] border-[#933b3b]",
+      "bg-[#ffecec] border-[#933b3b]",
+      "bg-[#ffe2e2] border-[#933b3b]",
+    ];
+    timetableData.value.forEach((row) => {
+      const slot = row.slots[dayIdx];
+      if (slot && slot.trim()) {
+        const [code, secRaw, room] = slot.split("\n");
+        const section = secRaw?.replace("section :", "").trim();
+        const info = filteredSubjects.value.find(s => s.kod_subjek === code.trim());
+        if (!colorMap.has(code)) {
+          colorMap.set(code, colors[colorIndex % colors.length]);
+          colorIndex++;
+        }
+        schedule.push({
+          time: row.waktu,
+          subject: code.trim(),
+          subjectName: info?.nama_subjek || "",
+          section,
+          room: room?.trim(),
+          color: colorMap.get(code),
+        });
+      }
+    });
+    // Merge jadwal harian
+    schedule.sort((a, b) => (waktuToMasa[a.time] || 0) - (waktuToMasa[b.time] || 0));
+    let current = null;
+    const merged = [];
+    for (let item of schedule) {
+      const masa = waktuToMasa[item.time] || 0;
+      if (!current) {
+        current = { ...item, masaStart: masa, masaEnd: masa };
+      } else if (
+        item.subject === current.subject &&
+        item.section === current.section &&
+        item.room === current.room &&
+        masa === current.masaEnd + 1
+      ) {
+        current.masaEnd = masa;
+      } else {
+        const waktuStart = Object.keys(waktuToMasa).find(w => waktuToMasa[w] === current.masaStart) || current.time;
+        const waktuEnd = Object.keys(waktuToMasa).find(w => waktuToMasa[w] === current.masaEnd) || current.time;
+        merged.push({ ...current, time: `${waktuStart.split('-')[0].trim()} - ${waktuEnd.split('-')[1].trim()}` });
+        current = { ...item, masaStart: masa, masaEnd: masa };
+      }
+    }
+    if (current) {
+      const waktuStart = Object.keys(waktuToMasa).find(w => waktuToMasa[w] === current.masaStart) || current.time;
+      const waktuEnd = Object.keys(waktuToMasa).find(w => waktuToMasa[w] === current.masaEnd) || current.time;
+      merged.push({ ...current, time: `${waktuStart.split('-')[0].trim()} - ${waktuEnd.split('-')[1].trim()}` });
+    }
+    agendaPerDay.push(merged);
+  }
+  return agendaPerDay;
+});
 </script>
 
 <style scoped>
@@ -377,5 +592,19 @@ const getDateForDay = (dayIndex) => {
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+@media (max-width: 600px) {
+  .responsive-info-card {
+    padding: 0.9rem 0.7rem !important;
+    min-height: 90px !important;
+    font-size: 0.97em !important;
+  }
+}
+@media (min-width: 601px) {
+  .responsive-info-card {
+    padding: 1.25rem !important;
+    min-height: 120px !important;
+    font-size: 1em !important;
+  }
 }
 </style>
